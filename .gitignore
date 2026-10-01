@@ -1,0 +1,31 @@
+# Eclipse specific files
+.settings/
+.classpath
+.project
+bin/
+
+# Build artifacts
+build/
+dist/
+*.war
+*.ear
+*.jar
+
+# Logs
+*.log
+
+# OS metadata
+Thumbs.db
+.DS_Store
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Temp
+temp/
+tmp/
+
+# Maven build output
+target/

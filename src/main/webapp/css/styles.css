@@ -1,0 +1,440 @@
+:root {
+    --primary-color: #0c4a6e;
+    /* Deep Blue */
+    --secondary-color: #fbbf24;
+    /* Amber Gold */
+    --bg-color: #f3f4f6;
+    --text-color: #1f2937;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #e2e8f0;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --white: #ffffff;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --border-radius: 8px;
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    transition: var(--transition);
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: block;
+    margin: 0 auto 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* CampusCore brand block in the sidebar */
+.sidebar-brand { display: block; text-decoration: none; color: inherit; }
+.brand-name { display: block; font-size: 1.35rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1.1; }
+.brand-campus { color: #60a5fa; } /* light brand blue: readable on the dark sidebar */
+.brand-core { color: #ffffff; }
+.brand-tagline { font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: #94a3b8; margin-top: 4px; }
+.sidebar-role { display: inline-block; margin-top: 8px; font-size: 0.7rem; letter-spacing: 0.06em; background: rgba(255, 255, 255, 0.08); padding: 2px 10px; border-radius: 999px; }
+
+.sidebar-nav {
+    flex: 1;
+    padding: 20px 0;
+    overflow-y: auto;
+}
+
+.nav-item {
+    padding: 12px 20px;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: var(--transition);
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left-color: var(--secondary-color);
+    color: var(--white);
+}
+
+.sidebar-section {
+    padding: 18px 23px 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    background-color: var(--danger-color);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.logout-btn:hover {
+    opacity: 0.9;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    min-width: 0; /* let wide tables scroll inside .table-scroll instead of widening the page */
+    margin-left: 260px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.top-header {
+    background-color: var(--white);
+    padding: 20px 40px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.uni-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #111827; /* "Core" in brand black */
+    letter-spacing: 0.5px;
+}
+
+.uni-name .brand-blue { color: #1d4ed8; } /* "Campus" in brand blue */
+.header-icon { border-radius: 50%; }
+
+.cms-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-top: 5px;
+}
+
+/* Page Content */
+.page-container {
+    padding: 30px 40px;
+    flex: 1;
+}
+
+.card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--bg-color);
+    padding-bottom: 10px;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Tables */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.95em;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.styled-table thead tr {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+    padding: 12px 15px;
+}
+
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.btn-attendance {
+    background: #10b981 !important;
+    /* Vibrant Green */
+    color: #ffffff !important;
+}
+
+.btn-gradebook {
+    background: #fbbf24 !important;
+    /* Amber Gold */
+    color: #1f2937 !important;
+}
+
+.btn-announcements {
+    background: #0c4a6e !important;
+    /* Deep Blue */
+    color: #ffffff !important;
+}
+
+.btn-messages {
+    background: #0f172a !important;
+    /* Navy */
+    color: #ffffff !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    opacity: 0.95;
+}
+
+/* Messages & Alerts */
+.alert {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.alert-error {
+    background-color: #fee2e2;
+    color: var(--danger-color);
+    border: 1px solid #fecaca;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    color: var(--success-color);
+    border: 1px solid #a7f3d0;
+}
+
+/* Login Page Specific */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100%;
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-color), #1e1b4b);
+}
+
+.login-card {
+    background: white;
+    padding: 40px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+}
+
+.login-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    background: #eee;
+    margin: 0 auto 20px;
+    display: flex;
+    /* Placeholder center */
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+/* ---------- Shared components used across pages ---------- */
+
+/* Several pages use alert-danger; keep it identical to alert-error */
+.alert-danger {
+    background-color: #fee2e2;
+    color: var(--danger-color);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: var(--white);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: var(--white);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Status pills: status-pending, status-approved, status-rejected, status-active, ... */
+.status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.status-pending, .status-open, .status-unpaid { background: #fef3c7; color: #b45309; }
+.status-approved, .status-closed, .status-active, .status-paid { background: #d1fae5; color: #047857; }
+.status-rejected, .status-inactive { background: #fee2e2; color: #b91c1c; }
+
+/* Request type labels */
+.type-add { color: #047857; font-weight: 700; }
+.type-drop { color: #b91c1c; font-weight: 700; }
+.type-withdraw { color: #b45309; font-weight: 700; }
+
+/* Class (students) and Department (teachers) tags */
+.tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    background: #eef2ff;
+    color: #3730a3;
+}
+
+.tag-department { background: #ecfeff; color: #155e75; }
+.tag-missing { background: #f3f4f6; color: #6b7280; font-style: italic; }
+
+.muted { color: #6b7280; font-size: 0.85em; }
+
+/* Filter toolbar above tables/lists */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.filter-bar input[type="search"] { flex: 1; min-width: 200px; }
+.filter-bar select { width: auto; min-width: 150px; }
+
+.table-scroll { overflow-x: auto; }
+
+/* The hidden attribute must win over component display rules (e.g. .btn is inline-block) */
+[hidden] {
+    display: none !important;
+}
+
+/* Phones / narrow windows: sidebar stacks above the content instead of taking 260px */
+@media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { position: static; width: 100%; height: auto; }
+    .sidebar-nav { overflow: visible; padding: 8px 0; }
+    .main-content { margin-left: 0; }
+    .top-header { padding: 16px; }
+    .page-container { padding: 16px; }
+    .card { padding: 16px; }
+}

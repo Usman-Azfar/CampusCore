@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0"
+         metadata-complete="true">
+         
+    <display-name>CampusCore - A Smart Campus Management System</display-name>
+
+    <!-- Hashes plain-text passwords left in an older database (runs once at start-up) -->
+    <listener>
+        <listener-class>com.cms.listeners.PasswordMigrationListener</listener-class>
+    </listener>
+
+    <!-- Filters Configuration -->
+    <!-- Authentication Filter -->
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>com.cms.filters.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Role Authorization Filter -->
+    <filter>
+        <filter-name>RoleAuthorizationFilter</filter-name>
+        <filter-class>com.cms.filters.RoleAuthorizationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>RoleAuthorizationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Servlet Declarations & Mappings -->
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.cms.controllers.LoginServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>com.cms.controllers.LogoutServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>DashboardServlet</servlet-name>
+        <servlet-class>com.cms.controllers.DashboardServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DashboardServlet</servlet-name>
+        <url-pattern>/dashboard</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ProfileServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ProfileServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProfileServlet</servlet-name>
+        <url-pattern>/updateProfile</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ChangePasswordServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ChangePasswordServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ChangePasswordServlet</servlet-name>
+        <url-pattern>/changePassword</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>GradebookServlet</servlet-name>
+        <servlet-class>com.cms.controllers.GradebookServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>GradebookServlet</servlet-name>
+        <url-pattern>/gradebook</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AttendanceServlet</servlet-name>
+        <servlet-class>com.cms.controllers.AttendanceServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AttendanceServlet</servlet-name>
+        <url-pattern>/attendance</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageAttendanceServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageAttendanceServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageAttendanceServlet</servlet-name>
+        <url-pattern>/manageAttendance</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>UploadGradesServlet</servlet-name>
+        <servlet-class>com.cms.controllers.UploadGradesServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UploadGradesServlet</servlet-name>
+        <url-pattern>/uploadGrades</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AnnouncementServlet</servlet-name>
+        <servlet-class>com.cms.controllers.AnnouncementServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AnnouncementServlet</servlet-name>
+        <url-pattern>/announcements</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>MessageServlet</servlet-name>
+        <servlet-class>com.cms.controllers.MessageServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MessageServlet</servlet-name>
+        <url-pattern>/messages</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>SupportTicketServlet</servlet-name>
+        <servlet-class>com.cms.controllers.SupportTicketServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SupportTicketServlet</servlet-name>
+        <url-pattern>/helpdesk</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CourseRequestServlet</servlet-name>
+        <servlet-class>com.cms.controllers.CourseRequestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CourseRequestServlet</servlet-name>
+        <url-pattern>/courseRequests</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminCourseRequestsServlet</servlet-name>
+        <servlet-class>com.cms.controllers.AdminCourseRequestsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminCourseRequestsServlet</servlet-name>
+        <url-pattern>/manageCourseRequests</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ChallanServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ChallanServlet</servlet-class>
+        <!-- Students upload proof of payment here -->
+        <multipart-config>
+            <max-file-size>10485760</max-file-size>
+            <max-request-size>12582912</max-request-size>
+            <file-size-threshold>2097152</file-size-threshold>
+        </multipart-config>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ChallanServlet</servlet-name>
+        <url-pattern>/challans</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>UploadChallanServlet</servlet-name>
+        <servlet-class>com.cms.controllers.UploadChallanServlet</servlet-class>
+        <multipart-config>
+            <max-file-size>10485760</max-file-size>
+            <max-request-size>52428800</max-request-size>
+            <file-size-threshold>2097152</file-size-threshold>
+        </multipart-config>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UploadChallanServlet</servlet-name>
+        <url-pattern>/uploadChallan</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TranscriptServlet</servlet-name>
+        <servlet-class>com.cms.controllers.TranscriptServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TranscriptServlet</servlet-name>
+        <url-pattern>/transcript</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageCoursesServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageCoursesServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageCoursesServlet</servlet-name>
+        <url-pattern>/manageCourses</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageSemestersServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageSemestersServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageSemestersServlet</servlet-name>
+        <url-pattern>/manageSemesters</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageAllocationsServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageAllocationsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageAllocationsServlet</servlet-name>
+        <url-pattern>/manageAllocations</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageTeachersServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageTeachersServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageTeachersServlet</servlet-name>
+        <url-pattern>/manageTeachers</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageStudentsServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageStudentsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageStudentsServlet</servlet-name>
+        <url-pattern>/manageStudents</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageEnrollmentServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageEnrollmentServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageEnrollmentServlet</servlet-name>
+        <url-pattern>/manageEnrollment</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageAnnouncementsServlet</servlet-name>
+        <servlet-class>com.cms.controllers.CourseAnnouncementServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageAnnouncementsServlet</servlet-name>
+        <url-pattern>/manageAnnouncements</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ManageClassesServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ManageClassesServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ManageClassesServlet</servlet-name>
+        <url-pattern>/manageClasses</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ChallanDocumentServlet</servlet-name>
+        <servlet-class>com.cms.controllers.ChallanDocumentServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ChallanDocumentServlet</servlet-name>
+        <url-pattern>/challanView</url-pattern>
+        <url-pattern>/challanFile</url-pattern>
+    </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>login.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>
