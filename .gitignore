@@ -29,3 +29,6 @@ tmp/
 
 # Maven build output
 target/
+
+# Local development notes (not published)
+session_context.txt
