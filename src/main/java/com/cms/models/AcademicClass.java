@@ -10,8 +10,26 @@ public class AcademicClass {
     private String programName;
     private int batchYear;
     private int studentCount; // Number of students in this class (for listings)
+    private Integer departmentId; // Optional owning department
+    private String departmentName;
 
     public AcademicClass() {
+    }
+
+    public Integer getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(Integer departmentId) {
+        this.departmentId = departmentId;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 
     public static String formatName(String degree, String programName, int batchYear) {

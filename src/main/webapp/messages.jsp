@@ -166,6 +166,10 @@
                if (errMsg != null) { %>
                 <div class="alert alert-error"><%= HtmlUtil.esc(errMsg) %></div>
             <% } %>
+            <% String infoMsg = (String) request.getAttribute("infoMessage");
+               if (infoMsg != null) { %>
+                <div class="alert alert-success" style="background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe;"><%= HtmlUtil.esc(infoMsg) %></div>
+            <% } %>
 
             <!-- Compose Section -->
             <div class="card" id="compose">
@@ -204,7 +208,8 @@
                         <input type="hidden" name="receiverIds" id="receiverIds" disabled>
 
                         <!-- Enhanced picker (shown by the script below) -->
-                        <div class="rp" id="rp" hidden>
+                        <% String presetCourse = (String) request.getAttribute("presetCourse"); %>
+                        <div class="rp" id="rp" hidden data-preset-course="<%= HtmlUtil.esc(presetCourse != null ? presetCourse : "") %>">
                             <div class="rp-chosen" id="rpChosen" aria-live="polite"></div>
 
                             <div class="rp-panel">
@@ -693,6 +698,14 @@
                 else if (e.key === "Enter") { e.preventDefault(); if (state.active >= 0) toggle(state.results[state.active]); }
                 else if (e.key === "Escape" && search.value) { e.preventDefault(); search.value = ""; render(); }
             });
+
+            // Opened from a course's "Message Students": show that course's students
+            var presetCourse = rp.dataset.presetCourse;
+            if (presetCourse) {
+                if (people.some(function (p) { return p.role === "STUDENT"; })) state.role = "STUDENT";
+                if (course && Array.prototype.some.call(course.options, function (o) { return o.value === presetCourse; }))
+                    course.value = presetCourse;
+            }
 
             syncFilterAvailability();
             render();

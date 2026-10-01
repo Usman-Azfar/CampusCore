@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8"
-    import="java.util.List, java.util.Set, java.util.Collections, com.cms.models.Course, com.cms.models.CourseRequest, com.cms.models.Enrollment, com.cms.models.User, com.cms.util.HtmlUtil" %>
+    import="java.util.List, java.util.Set, java.util.Collections, com.cms.models.ClassSemester, com.cms.models.Course, com.cms.models.CourseRequest, com.cms.models.Enrollment, com.cms.models.User, com.cms.util.HtmlUtil" %>
 <%
+    ClassSemester term = (ClassSemester) request.getAttribute("currentTerm"); // null: add/drop closed
     List<Course> addable = (List<Course>) request.getAttribute("addableCourses");
     List<Enrollment> current = (List<Enrollment>) request.getAttribute("currentEnrollments");
     Set<Integer> pending = (Set<Integer>) request.getAttribute("pendingCourseIds");
@@ -65,10 +66,19 @@
                     <% } else { %>
                         <span class="tag tag-missing">No class assigned</span>
                     <% } %>
+                    <% if (term != null) { %>
+                        <span class="tag tag-department"><%= HtmlUtil.esc(term.getTermName()) %> &middot; <%= term.getNumberLabel() %></span>
+                    <% } %>
                 </div>
             <% } %>
+            <% if (term == null) { %>
+            <div class="alert alert-error" style="margin-top:12px;">
+                Add/drop is closed: your class does not have a current semester. Please contact the admin.
+            </div>
+            <% } else { %>
             <p class="muted" style="margin-top:8px;">
-                Requests are reviewed by the admin. You can have one pending request per course at a time.
+                Requests are for your <%= term.getNumberLabel() %> (<%= HtmlUtil.esc(term.getTermName()) %>) and are reviewed by the admin.
+                You can have one pending request per course at a time.
             </p>
 
             <div class="request-grid">
@@ -158,6 +168,7 @@
                 </div>
 
             </div>
+            <% } %>
         </div>
 
         <!-- REQUEST HISTORY -->

@@ -1,7 +1,11 @@
 package com.cms.controllers;
 
+import com.cms.dao.CourseAllocationDAO;
+import com.cms.dao.EnrollmentDAO;
 import com.cms.dao.MessageDAO;
 import com.cms.dao.UserDAO;
+import com.cms.models.CourseAllocation;
+import com.cms.models.Enrollment;
 import com.cms.models.Message;
 import com.cms.models.User;
 import jakarta.servlet.ServletException;
@@ -65,6 +69,10 @@ public class MessageServlet extends HttpServlet {
 
         // Reply / "Message again" links: ?to=5 or ?to=5,6,7 (or repeated to=)
         Set<Integer> toIds = parseIds(request.getParameterValues("to"));
+        // "Message Students" on a course: ?allocationId=N selects that offering's students
+        Integer allocationId = AdminSupport.parseInt(request.getParameter("allocationId"));
+        if (allocationId != null && !"STUDENT".equals(user.getRole()))
+            toIds.addAll(courseStudents(request, user, allocationId, contactGroups));
         if (!toIds.isEmpty()) {
             request.setAttribute("selectedReceiverIds", toIds);
         }
@@ -164,6 +172,39 @@ public class MessageServlet extends HttpServlet {
             session.setAttribute(FLASH_DRAFT_TO, keep);
         }
         response.sendRedirect("messages#compose");
+    }
+
+    /**
+     * The students of a course offering who can be messaged, for pre-selecting them. A teacher only
+     * for their own offerings; sets "infoMessage" (who was selected) or "errorMessage", and
+     * "presetCourse" (the course code) so the picker opens filtered to that course.
+     */
+    private Set<Integer> courseStudents(HttpServletRequest request, User user, int allocationId,
+            Map<String, List<User>> contactGroups) {
+        Set<Integer> picked = new LinkedHashSet<>();
+        CourseAllocation offering = new CourseAllocationDAO().getOverview(allocationId);
+        if (offering == null || ("TEACHER".equals(user.getRole()) && offering.getTeacherId() != user.getUserId())) {
+            request.setAttribute("errorMessage", "That course is not assigned to you.");
+            return picked;
+        }
+        Set<Integer> contacts = new HashSet<>();
+        for (List<User> group : contactGroups.values())
+            for (User u : group)
+                contacts.add(u.getUserId());
+        int leftOut = 0;
+        for (Enrollment e : new EnrollmentDAO().getEnrollmentsByAllocationId(allocationId)) {
+            if (contacts.contains(e.getStudentId()))
+                picked.add(e.getStudentId());
+            else
+                leftOut++;
+        }
+        String course = offering.getCourse().getCourseCode() + " (" + offering.getSemester().getName() + ")";
+        request.setAttribute("infoMessage", picked.isEmpty() ? "No students to message in " + course + " yet."
+                : "Selected the " + picked.size() + " student" + (picked.size() == 1 ? "" : "s") + " of " + course
+                        + (leftOut > 0 ? " (" + leftOut + " inactive account" + (leftOut == 1 ? "" : "s") + " left out)" : "")
+                        + ". You can add or remove recipients below.");
+        request.setAttribute("presetCourse", offering.getCourse().getCourseCode());
+        return picked;
     }
 
     // Parses values like "5", "5,6,7" (possibly repeated) into distinct positive IDs, in order

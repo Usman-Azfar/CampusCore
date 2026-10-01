@@ -51,18 +51,20 @@ public class CourseDAO {
         return courses;
     }
 
-    public List<Course> getCoursesWithActiveAllocations() {
+    /** Courses offered (allocated to a teacher) in the current term of the student's class. */
+    public List<Course> getCoursesOfferedToStudent(int studentId) {
         List<Course> courses = new ArrayList<>();
         String sql = "SELECT DISTINCT c.*, d.name AS department_name FROM courses c " +
                 "LEFT JOIN departments d ON c.department_id = d.department_id " +
                 "JOIN course_allocations ca ON c.course_id = ca.course_id " +
-                "JOIN semesters s ON ca.semester_id = s.semester_id " +
-                "WHERE s.is_active = TRUE ORDER BY c.course_code";
+                "WHERE ca.semester_id = " + ClassSemesterDAO.studentCurrentTermSql("?") + " ORDER BY c.course_code";
         try (Connection conn = DBConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                courses.add(map(rs));
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, studentId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    courses.add(map(rs));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

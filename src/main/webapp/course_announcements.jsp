@@ -1,181 +1,130 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-    <%@ page import="java.util.List" %>
-        <%@ page import="com.cms.models.Announcement" %>
-            <%@ page import="com.cms.models.Course" %>
+<%@ page contentType="text/html;charset=UTF-8"
+    import="java.util.List, java.util.Collections, com.cms.models.Announcement, com.cms.models.CourseAllocation, com.cms.dao.AnnouncementDAO, com.cms.util.HtmlUtil" %>
+<%
+    CourseAllocation offering = (CourseAllocation) request.getAttribute("offering");
+    List<Announcement> announcements = (List<Announcement>) request.getAttribute("announcements");
+    if (announcements == null) announcements = Collections.emptyList();
+    Announcement editing = (Announcement) request.getAttribute("editing");
+    String draftTitle = (String) request.getAttribute("draftTitle");
+    String draftContent = (String) request.getAttribute("draftContent");
+    String formTitle = draftTitle != null ? draftTitle : editing != null ? editing.getTitle() : "";
+    String formContent = draftContent != null ? draftContent : editing != null ? editing.getContent() : "";
+%>
+<!DOCTYPE html>
+<html lang="en">
 
-                <!DOCTYPE html>
-                <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Course Announcements | CampusCore</title>
+    <link rel="icon" type="image/png" href="images/campuscore-icon-64.png">
+    <link rel="apple-touch-icon" href="images/campuscore-icon-192.png">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .page-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+        .facts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .ann { border-top: 1px solid #e5e7eb; padding: 14px 0; }
+        .ann:first-of-type { border-top: none; }
+        .ann-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+        .ann h4 { margin: 0; font-size: 1.05rem; color: #0f172a; }
+        .ann-text { white-space: pre-wrap; word-break: break-word; margin-top: 8px; color: #334155; line-height: 1.55; }
+        .ann-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .ann.editing { background: #fffbeb; margin: 0 -12px; padding: 14px 12px; border-radius: 8px; }
+        .counter { text-align: right; }
+    </style>
+</head>
 
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Course Announcements | CampusCore</title>
-                    <link rel="icon" type="image/png" href="images/campuscore-icon-64.png">
-                    <link rel="apple-touch-icon" href="images/campuscore-icon-192.png">
-                    <link rel="stylesheet" href="css/styles.css">
-                    <style>
-                        .announcement-container {
-                            background: white;
-                            padding: 2rem;
-                            border-radius: 12px;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                            margin: 2rem;
-                        }
+<body>
+<jsp:include page="sidebar.jsp" />
 
-                        .announcement-form {
-                            background: #f8fafc;
-                            padding: 1.5rem;
-                            border-radius: 8px;
-                            border: 1px solid #e2e8f0;
-                            margin-bottom: 2rem;
-                        }
+<main class="main-content">
+    <jsp:include page="header.jsp" />
 
-                        .form-group {
-                            margin-bottom: 1rem;
-                        }
+    <div class="page-container">
+        <% String okMsg = (String) request.getAttribute("successMessage");
+           if (okMsg != null) { %>
+            <div class="alert alert-success"><%= HtmlUtil.esc(okMsg) %></div>
+        <% } %>
+        <% String errMsg = (String) request.getAttribute("errorMessage");
+           if (errMsg != null) { %>
+            <div class="alert alert-error"><%= HtmlUtil.esc(errMsg) %></div>
+        <% } %>
 
-                        .form-group label {
-                            display: block;
-                            margin-bottom: 0.5rem;
-                            font-weight: 600;
-                            color: #1e293b;
-                        }
+        <div class="card">
+            <div class="page-head">
+                <div>
+                    <h2>Course Announcements</h2>
+                    <div class="facts">
+                        <span class="tag"><%= HtmlUtil.esc(offering.getCourse().getCourseCode()) %></span>
+                        <span class="tag"><%= HtmlUtil.esc(offering.getCourse().getCourseName()) %></span>
+                        <span class="tag tag-department"><%= HtmlUtil.esc(offering.getSemester().getName()) %></span>
+                        <span class="tag"><%= offering.getEnrolledCount() %> student<%= offering.getEnrolledCount() == 1 ? "" : "s" %></span>
+                    </div>
+                </div>
+                <a href="myCourses" class="btn btn-secondary">Course List</a>
+            </div>
+            <p class="muted" style="margin-top:10px;">Students currently enrolled in this course see these on their Announcements page.</p>
+        </div>
 
-                        .form-control {
-                            width: 100%;
-                            padding: 0.75rem;
-                            border: 1px solid #cbd5e1;
-                            border-radius: 6px;
-                            font-size: 1rem;
-                        }
+        <div class="card" id="form">
+            <h3><%= editing != null ? "Edit announcement" : "Post a new announcement" %></h3>
+            <form action="manageAnnouncements" method="post" style="margin-top:12px;">
+                <input type="hidden" name="action" value="<%= editing != null ? "update" : "create" %>">
+                <input type="hidden" name="allocationId" value="<%= offering.getAllocationId() %>">
+                <% if (editing != null) { %><input type="hidden" name="announcementId" value="<%= editing.getAnnouncementId() %>"><% } %>
+                <div class="form-group">
+                    <label class="form-label" for="title">Title</label>
+                    <input type="text" id="title" name="title" class="form-control" required maxlength="<%= AnnouncementDAO.MAX_TITLE %>"
+                           placeholder="e.g. Quiz 2 on Monday" value="<%= HtmlUtil.esc(formTitle) %>">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="content">Announcement</label>
+                    <textarea id="content" name="content" class="form-control" rows="5" required maxlength="<%= AnnouncementDAO.MAX_CONTENT %>"
+                              placeholder="Details for your students..."><%= HtmlUtil.esc(formContent) %></textarea>
+                    <div class="muted counter"><span id="count">0</span>/<%= AnnouncementDAO.MAX_CONTENT %></div>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <% if (editing != null) { %><a class="btn btn-secondary" href="manageAnnouncements?allocationId=<%= offering.getAllocationId() %>">Cancel</a><% } %>
+                    <button type="submit" class="btn btn-primary"><%= editing != null ? "Save changes" : "Post announcement" %></button>
+                </div>
+            </form>
+        </div>
 
-                        .btn-post {
-                            background: linear-gradient(135deg, var(--primary-color, #1e40af), var(--secondary-color, #3b82f6));
-                            color: white;
-                            padding: 0.75rem 1.5rem;
-                            border: none;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 600;
-                            transition: opacity 0.2s;
-                        }
-
-                        .btn-post:hover {
-                            opacity: 0.9;
-                        }
-
-                        .announcement-list {
-                            margin-top: 2rem;
-                        }
-
-                        .announcement-card {
-                            padding: 1.5rem;
-                            border-bottom: 1px solid #e2e8f0;
-                        }
-
-                        .announcement-card:last-child {
-                            border-bottom: none;
-                        }
-
-                        .ann-title {
-                            font-size: 1.25rem;
-                            font-weight: 700;
-                            color: #0f172a;
-                            margin-bottom: 0.5rem;
-                        }
-
-                        .ann-meta {
-                            font-size: 0.875rem;
-                            color: #64748b;
-                            margin-bottom: 1rem;
-                        }
-
-                        .ann-content {
-                            color: #334155;
-                            line-height: 1.6;
-                        }
-
-                        .success-msg {
-                            background-color: #dcfce7;
-                            color: #166534;
-                            padding: 1rem;
-                            border-radius: 6px;
-                            margin-bottom: 1rem;
-                            border: 1px solid #bbf7d0;
-                        }
-                    </style>
-                </head>
-
-                <body>
-                    <jsp:include page="sidebar.jsp" />
-
-                    <main class="main-content">
-                        <jsp:include page="header.jsp" />
-
-                        <div class="announcement-container">
-                            <% Course course=(Course) request.getAttribute("course"); List<Announcement> announcements =
-                                (List<Announcement>) request.getAttribute("announcements");
-                                    %>
-
-                                    <div
-                                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                                        <div>
-                                            <h2 style="margin: 0;">Course Announcements</h2>
-                                            <p style="color: #64748b; margin: 0.5rem 0 0 0;">
-                                                <%= course !=null ? course.getCourseName() : "Unknown Course" %>
-                                                    (<%= course !=null ? course.getCourseCode() : "N/A" %>)
-                                            </p>
-                                        </div>
-                                        <a href="dashboard" class="nav-item" style="text-decoration: none;">&larr; Back
-                                            to Dashboard</a>
-                                    </div>
-
-                                    <% if (request.getParameter("success") !=null) { %>
-                                        <div class="success-msg">Announcement posted successfully!</div>
-                                        <% } %>
-
-                                            <div class="announcement-form">
-                                                <h3 style="margin-top: 0;">Post New Announcement</h3>
-                                                <form action="manageAnnouncements" method="POST">
-                                                    <input type="hidden" name="courseId"
-                                                        value="<%= course != null ? course.getCourseId() : "" %>">
-                                                    <div class="form-group">
-                                                        <label for="title">Title</label>
-                                                        <input type="text" id="title" name="title" class="form-control"
-                                                            required placeholder="Announcement Title">
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="content">Content</label>
-                                                        <textarea id="content" name="content" class="form-control"
-                                                            rows="4" required
-                                                            placeholder="Announcement details..."></textarea>
-                                                    </div>
-                                                    <button type="submit" class="btn-post">Post Announcement</button>
-                                                </form>
-                                            </div>
-
-                                            <div class="announcement-list">
-                                                <h3>Existing Announcements</h3>
-                                                <% if (announcements !=null && !announcements.isEmpty()) { for
-                                                    (Announcement ann : announcements) { %>
-                                                    <div class="announcement-card">
-                                                        <div class="ann-title">
-                                                            <%= ann.getTitle() %>
-                                                        </div>
-                                                        <div class="ann-meta">
-                                                            Posted on: <%= ann.getCreatedAt() %>
-                                                        </div>
-                                                        <div class="ann-content">
-                                                            <%= ann.getContent() %>
-                                                        </div>
-                                                    </div>
-                                                    <% } } else { %>
-                                                        <p style="text-align: center; color: #64748b; padding: 2rem;">No
-                                                            announcements for this course yet.</p>
-                                                        <% } %>
-                                            </div>
-                        </div>
-                    </main>
-                </body>
-
-                </html>
+        <div class="card">
+            <h3>Posted announcements (<%= announcements.size() %>)</h3>
+            <% if (announcements.isEmpty()) { %>
+                <p class="muted" style="margin-top:8px;">No announcements for this course yet.</p>
+            <% } %>
+            <% for (Announcement a : announcements) { %>
+                <div class="ann <%= editing != null && editing.getAnnouncementId() == a.getAnnouncementId() ? "editing" : "" %>">
+                    <div class="ann-head">
+                        <h4><%= HtmlUtil.esc(a.getTitle()) %></h4>
+                        <span class="muted"><%= HtmlUtil.formatDate(a.getCreatedAt()) %><%= a.getUpdatedAt() != null ? " &middot; edited " + HtmlUtil.formatDate(a.getUpdatedAt()) : "" %></span>
+                    </div>
+                    <div class="muted">Posted by <%= HtmlUtil.esc(a.getCreator().getUsername()) %></div>
+                    <div class="ann-text"><%= HtmlUtil.esc(a.getContent()) %></div>
+                    <div class="ann-actions">
+                        <a class="btn btn-secondary btn-sm" href="manageAnnouncements?allocationId=<%= offering.getAllocationId() %>&edit=<%= a.getAnnouncementId() %>#form">Edit</a>
+                        <form method="post" action="manageAnnouncements" data-confirm="Delete the announcement &quot;<%= HtmlUtil.esc(a.getTitle()) %>&quot;? Students will no longer see it."
+                              onsubmit="return confirm(this.dataset.confirm);">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="allocationId" value="<%= offering.getAllocationId() %>">
+                            <input type="hidden" name="announcementId" value="<%= a.getAnnouncementId() %>">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</main>
+<script>
+(function () {
+    var content = document.getElementById("content"), count = document.getElementById("count");
+    var update = function () { count.textContent = content.value.length; };
+    content.addEventListener("input", update);
+    update();
+})();
+</script>
+</body>
+</html>

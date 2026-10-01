@@ -57,14 +57,18 @@ public class ManageClassesServlet extends HttpServlet {
                 String program = clean(request.getParameter("programName"));
                 Integer year = parseInt(request.getParameter("batchYear"));
                 Integer id = parseInt(request.getParameter("classId"));
+                Integer departmentId = parseInt(request.getParameter("departmentId")); // optional
                 error = validateClass(degree, program, year);
+                if (error == null && departmentId != null && !academicDAO.departmentExists(departmentId))
+                    error = "Please choose a valid department.";
                 if (error == null) {
                     AcademicDAO.Result r = (id == null)
-                            ? academicDAO.addClass(degree, program, year)
-                            : academicDAO.updateClass(id, degree, program, year);
+                            ? academicDAO.addClass(degree, program, year, departmentId)
+                            : academicDAO.updateClass(id, degree, program, year, departmentId);
                     error = r.error;
                 }
-                success = (id == null ? "Class added: " : "Class updated: ") + degree + " " + program + "-" + year;
+                success = (id == null ? "Class added: " : "Class updated: ") + degree + " " + program + "-" + year
+                        + (id == null ? ". Place it in a semester under Manage Semesters so its students can use add/drop." : "");
                 break;
             }
             case "deleteClass": {

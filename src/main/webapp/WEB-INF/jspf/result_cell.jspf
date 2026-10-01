@@ -1,0 +1,7 @@
+<%-- A course result, the same everywhere (gradebook, dashboard). Expects com.cms.models.Grade rg (may be null).
+     Needs the .letter / .pending styles of the page. --%><%
+    String rgStatus = rg == null ? com.cms.models.Grade.RESULT_AWAITED : rg.getResultStatus();
+%><% if (com.cms.models.Grade.RESULT_GRADED.equals(rgStatus)) { %><span class="letter<%= com.cms.util.GradeRules.isPass(rg.getGradeLetter()) ? "" : " fail" %>"><%= com.cms.util.HtmlUtil.esc(rg.getGradeLetter()) %></span><%
+   } else if (com.cms.models.Grade.RESULT_WITHDRAWN.equals(rgStatus)) { %><span class="letter withdrawn" title="Withdrawn">W</span><%
+   } else if (com.cms.models.Grade.RESULT_IN_PROGRESS.equals(rgStatus)) { %><span class="pending">In progress</span><%
+   } else { %><span class="pending">Result awaited</span><% } %>

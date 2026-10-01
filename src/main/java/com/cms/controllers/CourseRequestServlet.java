@@ -1,5 +1,6 @@
 package com.cms.controllers;
 
+import com.cms.dao.ClassSemesterDAO;
 import com.cms.dao.CourseDAO;
 import com.cms.dao.CourseRequestDAO;
 import com.cms.dao.EnrollmentDAO;
@@ -31,12 +32,14 @@ public class CourseRequestServlet extends HttpServlet {
     private EnrollmentDAO enrollmentDAO;
     private CourseRequestDAO courseRequestDAO;
     private UserDAO userDAO;
+    private ClassSemesterDAO classSemesterDAO;
 
     public void init() {
         courseDAO = new CourseDAO();
         enrollmentDAO = new EnrollmentDAO();
         courseRequestDAO = new CourseRequestDAO();
         userDAO = new UserDAO();
+        classSemesterDAO = new ClassSemesterDAO();
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -56,7 +59,7 @@ public class CourseRequestServlet extends HttpServlet {
         for (Enrollment e : enrollmentDAO.getEnrollmentsByStudent(user.getUserId())) {
             enrolledCourseIds.add(e.getCourseAllocation().getCourse().getCourseId());
         }
-        List<Course> addable = courseDAO.getCoursesWithActiveAllocations();
+        List<Course> addable = courseDAO.getCoursesOfferedToStudent(user.getUserId());
         addable.removeIf(c -> enrolledCourseIds.contains(c.getCourseId()));
 
         // Courses that already have a pending request (any type) cannot get another
@@ -71,6 +74,7 @@ public class CourseRequestServlet extends HttpServlet {
         request.setAttribute("pendingCourseIds", pendingCourseIds);
         request.setAttribute("requestHistory", history);
         request.setAttribute("student", userDAO.getUserById(user.getUserId()));
+        request.setAttribute("currentTerm", classSemesterDAO.getCurrentForStudent(user.getUserId()));
 
         request.getRequestDispatcher("course_requests.jsp").forward(request, response);
     }
@@ -112,13 +116,15 @@ public class CourseRequestServlet extends HttpServlet {
     private String validate(int studentId, String type, int courseId) {
         if (type == null || !CourseRequestDAO.TYPES.contains(type))
             return "Invalid request type.";
+        if (classSemesterDAO.getCurrentForStudent(studentId) == null)
+            return "Add/drop is closed: your class does not have a current semester. Please contact the admin.";
         if (courseId <= 0)
             return "Please select a course.";
         if (courseRequestDAO.hasPendingRequest(studentId, courseId))
             return "You already have a pending request for this course. Wait for the admin to process it.";
 
         if ("ADD".equals(type)) {
-            boolean offered = courseDAO.getCoursesWithActiveAllocations().stream()
+            boolean offered = courseDAO.getCoursesOfferedToStudent(studentId).stream()
                     .anyMatch(c -> c.getCourseId() == courseId);
             if (!offered)
                 return "That course is not offered in the current semester.";

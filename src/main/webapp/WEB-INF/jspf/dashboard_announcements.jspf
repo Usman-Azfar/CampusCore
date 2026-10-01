@@ -1,0 +1,22 @@
+<%-- Latest announcements card on the dashboard (included by dashboard.jsp; uses "latestAnnouncements") --%>
+<%
+    List<com.cms.models.Announcement> latestAnns = (List<com.cms.models.Announcement>) request.getAttribute("latestAnnouncements");
+    if (latestAnns == null) latestAnns = java.util.Collections.emptyList();
+%>
+<div class="card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h3 class="card-title">Latest announcements</h3>
+        <a href="announcements" class="btn btn-secondary btn-sm">All announcements</a>
+    </div>
+    <% if (latestAnns.isEmpty()) { %>
+        <p class="muted">No announcements yet.</p>
+    <% } %>
+    <% for (com.cms.models.Announcement la : latestAnns) { %>
+        <div class="ann-mini">
+            <strong><%= com.cms.util.HtmlUtil.esc(la.getTitle()) %></strong>
+            <span class="tag <%= la.isGeneral() ? "" : "tag-department" %>" style="margin-left:6px;"><%= la.isGeneral() ? "General" : com.cms.util.HtmlUtil.esc(la.getCourse().getCourseCode()) %></span>
+            <span class="muted" style="margin-left:6px;"><%= com.cms.util.HtmlUtil.formatDate(la.getCreatedAt()) %></span>
+            <div class="ann-mini-text"><%= com.cms.util.HtmlUtil.esc(la.getContent()) %></div>
+        </div>
+    <% } %>
+</div>

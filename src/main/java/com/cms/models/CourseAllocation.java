@@ -43,4 +43,30 @@ public class CourseAllocation {
 
     public int getEnrollmentRows() { return enrollmentRows; }
     public void setEnrollmentRows(int enrollmentRows) { this.enrollmentRows = enrollmentRows; }
+
+    // Attendance statistics (filled by AttendanceDAO)
+    private int lectureCount;           // lectures held so far
+    private java.sql.Date lastLectureDate;
+
+    public int getLectureCount() { return lectureCount; }
+    public void setLectureCount(int lectureCount) { this.lectureCount = lectureCount; }
+
+    public java.sql.Date getLastLectureDate() { return lastLectureDate; }
+    public void setLastLectureDate(java.sql.Date lastLectureDate) { this.lastLectureDate = lastLectureDate; }
+
+    // Grade statistics (filled by GradeDAO), over students currently ENROLLED
+    private int completeCount;          // all three marks entered
+    private int publishedCount;         // result visible to the student
+
+    public int getCompleteCount() { return completeCount; }
+    public void setCompleteCount(int completeCount) { this.completeCount = completeCount; }
+
+    public int getPublishedCount() { return publishedCount; }
+    public void setPublishedCount(int publishedCount) { this.publishedCount = publishedCount; }
+
+    // Announcements posted to this offering (filled by CourseAllocationDAO.getTeachingOverview)
+    private int announcementCount;
+
+    public int getAnnouncementCount() { return announcementCount; }
+    public void setAnnouncementCount(int announcementCount) { this.announcementCount = announcementCount; }
 }

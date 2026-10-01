@@ -131,13 +131,13 @@ public class CourseRequestDAO {
                 }
             }
 
-            // 2. The course offering (allocation) in the active semester
+            // 2. The course offering (allocation) in the current term of the student's class
             int allocationId = -1, semesterId = -1;
             try (PreparedStatement stmt = conn.prepareStatement(
                     "SELECT ca.allocation_id, ca.semester_id FROM course_allocations ca " +
-                            "JOIN semesters s ON ca.semester_id = s.semester_id " +
-                            "WHERE ca.course_id = ? AND s.is_active = TRUE LIMIT 1")) {
+                            "WHERE ca.course_id = ? AND ca.semester_id = " + ClassSemesterDAO.studentCurrentTermSql("?"))) {
                 stmt.setInt(1, courseId);
+                stmt.setInt(2, studentId);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         allocationId = rs.getInt("allocation_id");
@@ -146,8 +146,8 @@ public class CourseRequestDAO {
                 }
             }
             if (allocationId == -1) {
-                return rollback(conn, "This course is not offered (allocated to a teacher) in the active semester. " +
-                        "Allocate it first, or reject the request.");
+                return rollback(conn, "This course is not offered (allocated to a teacher) in the current semester of the student's class, " +
+                        "or the class has no current semester. Allocate it or set the class's semester first, or reject the request.");
             }
 
             // 3. Apply the change
@@ -218,14 +218,17 @@ public class CourseRequestDAO {
             // Same semester number as the student's other courses this semester (NULL if none)
             try (PreparedStatement stmt = conn.prepareStatement(
                     "INSERT INTO enrollments (student_id, allocation_id, status, semester_number) " +
-                            "SELECT ?, ?, 'ENROLLED', (SELECT MAX(e.semester_number) FROM enrollments e " +
+                            "SELECT ?, ?, 'ENROLLED', COALESCE(" + ClassSemesterDAO.studentSemesterNumberSql("?", "?") + ", " +
+                            "(SELECT MAX(e.semester_number) FROM enrollments e " +
                             "JOIN course_allocations ca ON e.allocation_id = ca.allocation_id " +
-                            "WHERE e.student_id = ? AND ca.semester_id = ?)",
+                            "WHERE e.student_id = ? AND ca.semester_id = ?))",
                     Statement.RETURN_GENERATED_KEYS)) {
                 stmt.setInt(1, studentId);
                 stmt.setInt(2, allocationId);
-                stmt.setInt(3, studentId);
+                stmt.setInt(3, studentId); // the class's semester number for this term
                 stmt.setInt(4, semesterId);
+                stmt.setInt(5, studentId); // fallback: the student's other courses this term
+                stmt.setInt(6, semesterId);
                 stmt.executeUpdate();
                 try (ResultSet keys = stmt.getGeneratedKeys()) {
                     if (!keys.next())
@@ -235,10 +238,9 @@ public class CourseRequestDAO {
             }
         }
 
-        // Every enrollment has a grade row (the teacher's grade sheet relies on it)
+        // Every enrollment has a grade row; marks stay NULL (not entered) until the teacher enters them
         try (PreparedStatement stmt = conn.prepareStatement(
-                "INSERT IGNORE INTO grades (enrollment_id, sessional_marks, mid_marks, final_marks, grade_letter, is_published) " +
-                        "VALUES (?, 0, 0, 0, NULL, FALSE)")) {
+                "INSERT IGNORE INTO grades (enrollment_id) VALUES (?)")) {
             stmt.setInt(1, enrollmentId);
             stmt.executeUpdate();
         }

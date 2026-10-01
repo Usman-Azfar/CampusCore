@@ -36,7 +36,23 @@ public class RoleAuthorizationFilter extends HttpFilter implements Filter {
         ACCESS_CONTROLS.put("/course_requests.jsp", studentRoles);
         ACCESS_CONTROLS.put("/challans", studentRoles);
         ACCESS_CONTROLS.put("/challans.jsp", studentRoles);
-        ACCESS_CONTROLS.put("/view_transcript.jsp", studentRoles);
+        ACCESS_CONTROLS.put("/attendance", studentRoles);
+        ACCESS_CONTROLS.put("/attendance.jsp", studentRoles);
+        ACCESS_CONTROLS.put("/gradebook", studentRoles);
+        ACCESS_CONTROLS.put("/gradebook.jsp", studentRoles);
+        ACCESS_CONTROLS.put("/transcript", studentRoles);
+        ACCESS_CONTROLS.put("/transcript.jsp", studentRoles);
+
+        // Teacher Only Pages
+        List<String> teacherRoles = Arrays.asList("TEACHER");
+        ACCESS_CONTROLS.put("/manageAttendance", teacherRoles);
+        ACCESS_CONTROLS.put("/manage_attendance.jsp", teacherRoles);
+        ACCESS_CONTROLS.put("/uploadGrades", teacherRoles);
+        ACCESS_CONTROLS.put("/upload_grades.jsp", teacherRoles);
+        ACCESS_CONTROLS.put("/myCourses", teacherRoles);
+        ACCESS_CONTROLS.put("/my_courses.jsp", teacherRoles);
+        ACCESS_CONTROLS.put("/manageAnnouncements", teacherRoles);
+        ACCESS_CONTROLS.put("/course_announcements.jsp", teacherRoles);
 
         // Example: Admin Only (Future)
         // ACCESS_CONTROLS.put("/manageCourses", Arrays.asList("ADMIN"));

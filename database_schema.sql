@@ -30,7 +30,9 @@ CREATE TABLE `classes` (
   `degree` VARCHAR(20) NOT NULL,          -- e.g. 'BS'
   `program_name` VARCHAR(100) NOT NULL,   -- e.g. 'Computer Science'
   `batch_year` SMALLINT NOT NULL CHECK (`batch_year` BETWEEN 1950 AND 2100), -- e.g. 2026
-  UNIQUE KEY `unique_class` (`degree`, `program_name`, `batch_year`)
+  `department_id` INT NULL,               -- Optional owning department
+  UNIQUE KEY `unique_class` (`degree`, `program_name`, `batch_year`),
+  CONSTRAINT `fk_classes_department` FOREIGN KEY (`department_id`) REFERENCES `departments`(`department_id`)
 );
 
 -- -----------------------------------------------------
@@ -72,7 +74,9 @@ CREATE TABLE `profiles` (
 );
 
 -- -----------------------------------------------------
--- Table: semesters
+-- Table: semesters (terms, e.g. 'Fall 2024')
+-- is_active: TRUE while at least one class is currently in this term. Several terms can be
+-- active at once. The application keeps it up to date from class_semesters.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `semesters`;
 CREATE TABLE `semesters` (
@@ -81,6 +85,30 @@ CREATE TABLE `semesters` (
   `start_date` DATE,
   `end_date` DATE,
   `is_active` BOOLEAN DEFAULT FALSE
+);
+
+-- -----------------------------------------------------
+-- Table: class_semesters
+-- The semester number a class is in during a term, e.g. in Fall 2024
+-- "BS Computer Science-2022" is in its 5th semester and "BS Computer Science-2025" in its 1st.
+-- A class has at most one current term (one_current_per_class).
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `class_semesters`;
+CREATE TABLE `class_semesters` (
+  `class_semester_id` INT AUTO_INCREMENT PRIMARY KEY,
+  `class_id` INT NOT NULL,
+  `semester_id` INT NOT NULL,
+  `semester_number` TINYINT NOT NULL CHECK (`semester_number` >= 1),
+  `is_current` BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Equals class_id only while current, so the unique key allows one current term per class
+  `current_class_id` INT AS (IF(`is_current`, `class_id`, NULL)) STORED,
+  UNIQUE KEY `unique_class_term` (`class_id`, `semester_id`),
+  UNIQUE KEY `unique_class_number` (`class_id`, `semester_number`),
+  UNIQUE KEY `one_current_per_class` (`current_class_id`),
+  -- No ON DELETE CASCADE: MySQL does not allow it on a column a stored generated column uses.
+  -- Deleting a class removes its rows first (AcademicDAO.deleteClass).
+  CONSTRAINT `fk_class_semesters_class` FOREIGN KEY (`class_id`) REFERENCES `classes`(`class_id`),
+  CONSTRAINT `fk_class_semesters_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters`(`semester_id`)
 );
 
 -- -----------------------------------------------------
@@ -142,39 +170,72 @@ CREATE TABLE `enrollments` (
 
 -- -----------------------------------------------------
 -- Table: grades
--- Marks distribution: Sessional(25), Mid(35), Final(40)
+-- Marks distribution: Sessional(25), Mid(35), Final(40), in steps of 0.5.
+-- A mark is NULL until it is entered (not zero). grade_letter is set by the application
+-- only once all three marks are entered. Students see a result only when is_published;
+-- the transcript counts published results with all three marks.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `grades`;
 CREATE TABLE `grades` (
   `grade_id` INT AUTO_INCREMENT PRIMARY KEY,
   `enrollment_id` INT NOT NULL UNIQUE,
-  `sessional_marks` DOUBLE DEFAULT 0 CHECK (`sessional_marks` <= 25),
-  `mid_marks` DOUBLE DEFAULT 0 CHECK (`mid_marks` <= 35),
-  `final_marks` DOUBLE DEFAULT 0 CHECK (`final_marks` <= 40),
-  `total_marks` DOUBLE GENERATED ALWAYS AS (`sessional_marks` + `mid_marks` + `final_marks`) STORED,
+  `sessional_marks` DOUBLE NULL DEFAULT NULL,
+  `mid_marks` DOUBLE NULL DEFAULT NULL,
+  `final_marks` DOUBLE NULL DEFAULT NULL,
+  `total_marks` DOUBLE GENERATED ALWAYS AS (`sessional_marks` + `mid_marks` + `final_marks`) STORED, -- NULL until complete
   `grade_letter` VARCHAR(2), -- A, B+, B, etc.
   `is_published` BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (`enrollment_id`) REFERENCES `enrollments`(`enrollment_id`) ON DELETE CASCADE
+  `updated_by` INT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  CONSTRAINT `chk_grades_sessional` CHECK (`sessional_marks` BETWEEN 0 AND 25),
+  CONSTRAINT `chk_grades_mid` CHECK (`mid_marks` BETWEEN 0 AND 35),
+  CONSTRAINT `chk_grades_final` CHECK (`final_marks` BETWEEN 0 AND 40),
+  FOREIGN KEY (`enrollment_id`) REFERENCES `enrollments`(`enrollment_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_grades_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users`(`user_id`) ON DELETE SET NULL
 );
 
 -- -----------------------------------------------------
--- Table: attendance
--- 32 Lectures per semester
+-- Table: lectures
+-- One row per lecture held in a course offering. Lecture numbers are not stored:
+-- they follow date order. Up to 32 lectures per offering (enforced by the application).
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `lectures`;
+CREATE TABLE `lectures` (
+  `lecture_id` INT AUTO_INCREMENT PRIMARY KEY,
+  `allocation_id` INT NOT NULL,                 -- the course offering (course + teacher + term)
+  `lecture_date` DATE NOT NULL,
+  `topic` VARCHAR(200) NULL,
+  `created_by` INT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` INT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  KEY `idx_lectures_allocation_date` (`allocation_id`, `lecture_date`),
+  CONSTRAINT `fk_lectures_allocation` FOREIGN KEY (`allocation_id`) REFERENCES `course_allocations`(`allocation_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lectures_created_by` FOREIGN KEY (`created_by`) REFERENCES `users`(`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_lectures_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users`(`user_id`) ON DELETE SET NULL
+);
+
+-- -----------------------------------------------------
+-- Table: attendance (one student's status in one lecture)
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `attendance`;
 CREATE TABLE `attendance` (
   `attendance_id` INT AUTO_INCREMENT PRIMARY KEY,
+  `lecture_id` INT NOT NULL,
   `enrollment_id` INT NOT NULL,
-  `lecture_number` INT NOT NULL CHECK (`lecture_number` BETWEEN 1 AND 32),
-  `date` DATE NOT NULL,
   `status` ENUM('Present', 'Absent', 'Leave') NOT NULL,
-  UNIQUE KEY `unique_attendance` (`enrollment_id`, `lecture_number`),
+  UNIQUE KEY `unique_lecture_student` (`lecture_id`, `enrollment_id`),
+  KEY `idx_attendance_enrollment` (`enrollment_id`),
+  CONSTRAINT `fk_attendance_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lectures`(`lecture_id`) ON DELETE CASCADE,
   FOREIGN KEY (`enrollment_id`) REFERENCES `enrollments`(`enrollment_id`) ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------
 -- Table: announcements
--- Can be General or Course Specific
+-- General (allocation_id and course_id NULL): posted by the admin, seen by `audience`
+-- (everyone, students only or teachers only).
+-- Course announcements: posted by the teacher of one course offering (allocation_id) and seen by
+-- the students currently enrolled in it. course_id is kept in step with the offering's course.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `announcements`;
 CREATE TABLE `announcements` (
@@ -182,9 +243,14 @@ CREATE TABLE `announcements` (
   `title` VARCHAR(100) NOT NULL,
   `content` TEXT NOT NULL,
   `course_id` INT DEFAULT NULL, -- If NULL, it's a general announcement
+  `allocation_id` INT NULL,     -- the course offering (course + teacher + term)
+  `audience` ENUM('ALL', 'STUDENTS', 'TEACHERS') NOT NULL DEFAULT 'ALL', -- general announcements
   `created_by` INT NOT NULL, -- Teacher or Admin
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  KEY `idx_announcements_allocation` (`allocation_id`),
   FOREIGN KEY (`course_id`) REFERENCES `courses`(`course_id`),
+  CONSTRAINT `fk_announcements_allocation` FOREIGN KEY (`allocation_id`) REFERENCES `course_allocations`(`allocation_id`) ON DELETE CASCADE,
   FOREIGN KEY (`created_by`) REFERENCES `users`(`user_id`)
 );
 
@@ -269,7 +335,7 @@ CREATE TABLE `challans` (
 -- Insert Seed Data (Department and Class)
 -- -----------------------------------------------------
 INSERT INTO `departments` (`name`) VALUES ('Computer Science');
-INSERT INTO `classes` (`degree`, `program_name`, `batch_year`) VALUES ('BS', 'Computer Science', 2022);
+INSERT INTO `classes` (`degree`, `program_name`, `batch_year`, `department_id`) VALUES ('BS', 'Computer Science', 2022, 1);
 
 -- -----------------------------------------------------
 -- Insert Seed Data (sample accounts)
@@ -293,10 +359,13 @@ VALUES (3, 'Dr. Sarah Ahmed', 'Female', 'sarah@campuscore.edu.pk', 'Lahore', 'Pa
 
 
 -- -----------------------------------------------------
--- Insert Seed Data (Active Semester)
+-- Insert Seed Data (Term and the class's current semester)
 -- -----------------------------------------------------
-INSERT INTO `semesters` (`name`, `start_date`, `end_date`, `is_active`) 
+INSERT INTO `semesters` (`name`, `start_date`, `end_date`, `is_active`)
 VALUES ('Fall 2024', '2024-09-01', '2025-01-15', TRUE);
+
+-- BS Computer Science-2022 is in its 3rd semester in Fall 2024 (its current term)
+INSERT INTO `class_semesters` (`class_id`, `semester_id`, `semester_number`, `is_current`) VALUES (1, 1, 3, TRUE);
 
 -- -----------------------------------------------------
 -- Insert Seed Data (Courses)
@@ -330,27 +399,34 @@ INSERT INTO `enrollments` (`student_id`, `allocation_id`, `semester_number`) VAL
 -- -----------------------------------------------------
 -- Insert Seed Data (Grades)
 -- -----------------------------------------------------
-INSERT INTO `grades` (`enrollment_id`, `sessional_marks`, `mid_marks`, `final_marks`, `grade_letter`, `is_published`) VALUES 
-(1, 20, 28, 35, 'A-', TRUE), -- Grades for OOP (Total: 83)
-(2, 18, 25, 0, NULL, FALSE); -- Grades for DSA (Finals not uploaded yet)
+INSERT INTO `grades` (`enrollment_id`, `sessional_marks`, `mid_marks`, `final_marks`, `grade_letter`, `is_published`, `updated_by`, `updated_at`) VALUES 
+(1, 20, 28, 35, 'A-', TRUE, 3, '2025-01-20 10:00:00'),    -- OOP: complete and published (total 83)
+(2, 18, 25, NULL, NULL, FALSE, 3, '2024-11-15 10:00:00'); -- DSA: final exam not held yet
 
 -- -----------------------------------------------------
--- Insert Seed Data (Attendance)
--- For OOP (Enrollment ID 1)
+-- Insert Seed Data (Lectures and attendance)
+-- Five OOP lectures (allocation 1, taught by TEACHER1 = user 3) for enrollment 1
 -- -----------------------------------------------------
-INSERT INTO `attendance` (`enrollment_id`, `lecture_number`, `date`, `status`) VALUES 
-(1, 1, '2024-09-02', 'Present'),
-(1, 2, '2024-09-04', 'Present'),
-(1, 3, '2024-09-09', 'Absent'),
-(1, 4, '2024-09-11', 'Present'),
-(1, 5, '2024-09-16', 'Leave');
+INSERT INTO `lectures` (`allocation_id`, `lecture_date`, `created_by`, `created_at`) VALUES
+(1, '2024-09-02', 3, '2024-09-02 10:00:00'),
+(1, '2024-09-04', 3, '2024-09-04 10:00:00'),
+(1, '2024-09-09', 3, '2024-09-09 10:00:00'),
+(1, '2024-09-11', 3, '2024-09-11 10:00:00'),
+(1, '2024-09-16', 3, '2024-09-16 10:00:00');
+
+INSERT INTO `attendance` (`lecture_id`, `enrollment_id`, `status`) VALUES
+(1, 1, 'Present'),
+(2, 1, 'Present'),
+(3, 1, 'Absent'),
+(4, 1, 'Present'),
+(5, 1, 'Leave');
 
 -- -----------------------------------------------------
 -- Insert Seed Data (Announcements)
 -- -----------------------------------------------------
-INSERT INTO `announcements` (`title`, `content`, `course_id`, `created_by`) VALUES 
-('Welcome to Fall 2024', 'Welcome back students! Classes commence from Sep 1st.', NULL, 1), -- General Announcement by Admin
-('OOP Quiz 1', 'Quiz 1 will be held on Monday covering Chapter 1 & 2.', 3, 3); -- Course Announcement by Teacher
+INSERT INTO `announcements` (`title`, `content`, `course_id`, `allocation_id`, `audience`, `created_by`) VALUES 
+('Welcome to Fall 2024', 'Welcome back students! Classes commence from Sep 1st.', NULL, NULL, 'STUDENTS', 1), -- General, by Admin
+('OOP Quiz 1', 'Quiz 1 will be held on Monday covering Chapter 1 & 2.', 3, 1, 'ALL', 3);   -- OOP offering (allocation 1), by TEACHER1
 
 -- -----------------------------------------------------
 -- Insert Seed Data (Messages)

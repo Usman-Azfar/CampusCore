@@ -12,45 +12,77 @@ import java.util.List;
 
 public class CourseAllocationDAO {
 
-    public List<CourseAllocation> getAllocationsByTeacher(int teacherId) {
-        List<CourseAllocation> allocations = new ArrayList<>();
-        // Join with course and semester tables
-        String sql = "SELECT ca.*, c.course_code, c.course_name, s.name as semester_name " +
-                "FROM course_allocations ca " +
-                "JOIN courses c ON ca.course_id = c.course_id " +
-                "JOIN semesters s ON ca.semester_id = s.semester_id " +
-                "WHERE ca.teacher_id = ?";
+    // One offering per row with what the teacher's course list and dashboard show about it
+    private static final String OVERVIEW_SELECT = "SELECT ca.allocation_id, ca.course_id, ca.teacher_id, ca.semester_id, " +
+            "c.course_code, c.course_name, c.credit_hours, s.name AS semester_name, s.start_date, s.end_date, s.is_active, " +
+            "(SELECT COUNT(*) FROM enrollments e WHERE e.allocation_id = ca.allocation_id AND e.status = 'ENROLLED') AS enrolled_count, " +
+            "(SELECT COUNT(*) FROM lectures l WHERE l.allocation_id = ca.allocation_id) AS lecture_count, " +
+            "(SELECT MAX(l.lecture_date) FROM lectures l WHERE l.allocation_id = ca.allocation_id) AS last_lecture, " +
+            "(SELECT COUNT(*) FROM enrollments e JOIN grades g ON g.enrollment_id = e.enrollment_id WHERE e.allocation_id = ca.allocation_id " +
+            "  AND e.status = 'ENROLLED' AND g.sessional_marks IS NOT NULL AND g.mid_marks IS NOT NULL AND g.final_marks IS NOT NULL) AS complete_count, " +
+            "(SELECT COUNT(*) FROM enrollments e JOIN grades g ON g.enrollment_id = e.enrollment_id WHERE e.allocation_id = ca.allocation_id " +
+            "  AND e.status = 'ENROLLED' AND g.is_published = TRUE) AS published_count, " +
+            "(SELECT COUNT(*) FROM announcements a WHERE a.allocation_id = ca.allocation_id) AS announcement_count " +
+            "FROM course_allocations ca " +
+            "JOIN courses c ON c.course_id = ca.course_id " +
+            "JOIN semesters s ON s.semester_id = ca.semester_id ";
 
+    /** A teacher's offerings, newest term first, with students, lectures, grading and announcement counts. */
+    public List<CourseAllocation> getTeachingOverview(int teacherId) {
+        List<CourseAllocation> list = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+                PreparedStatement stmt = conn.prepareStatement(OVERVIEW_SELECT + "WHERE ca.teacher_id = ? ORDER BY s.start_date DESC, c.course_code")) {
             stmt.setInt(1, teacherId);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    CourseAllocation ca = new CourseAllocation();
-                    ca.setAllocationId(rs.getInt("allocation_id"));
-                    ca.setCourseId(rs.getInt("course_id"));
-                    ca.setTeacherId(rs.getInt("teacher_id"));
-                    ca.setSemesterId(rs.getInt("semester_id"));
-
-                    Course course = new Course();
-                    course.setCourseId(rs.getInt("course_id"));
-                    course.setCourseCode(rs.getString("course_code"));
-                    course.setCourseName(rs.getString("course_name"));
-                    ca.setCourse(course);
-
-                    com.cms.models.Semester sem = new com.cms.models.Semester();
-                    sem.setSemesterId(rs.getInt("semester_id"));
-                    sem.setName(rs.getString("semester_name"));
-                    ca.setSemester(sem);
-
-                    allocations.add(ca);
-                }
+                while (rs.next())
+                    list.add(mapOverview(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return allocations;
+        return list;
+    }
+
+    /** One offering with its term dates and counts (null if it does not exist). */
+    public CourseAllocation getOverview(int allocationId) {
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(OVERVIEW_SELECT + "WHERE ca.allocation_id = ?")) {
+            stmt.setInt(1, allocationId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? mapOverview(rs) : null;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static CourseAllocation mapOverview(ResultSet rs) throws SQLException {
+        CourseAllocation ca = new CourseAllocation();
+        ca.setAllocationId(rs.getInt("allocation_id"));
+        ca.setCourseId(rs.getInt("course_id"));
+        ca.setTeacherId(rs.getInt("teacher_id"));
+        ca.setSemesterId(rs.getInt("semester_id"));
+        Course c = new Course();
+        c.setCourseId(rs.getInt("course_id"));
+        c.setCourseCode(rs.getString("course_code"));
+        c.setCourseName(rs.getString("course_name"));
+        c.setCreditHours(rs.getInt("credit_hours"));
+        ca.setCourse(c);
+        com.cms.models.Semester s = new com.cms.models.Semester();
+        s.setSemesterId(rs.getInt("semester_id"));
+        s.setName(rs.getString("semester_name"));
+        s.setStartDate(rs.getDate("start_date"));
+        s.setEndDate(rs.getDate("end_date"));
+        s.setActive(rs.getBoolean("is_active"));
+        ca.setSemester(s);
+        ca.setEnrolledCount(rs.getInt("enrolled_count"));
+        ca.setLectureCount(rs.getInt("lecture_count"));
+        ca.setLastLectureDate(rs.getDate("last_lecture"));
+        ca.setCompleteCount(rs.getInt("complete_count"));
+        ca.setPublishedCount(rs.getInt("published_count"));
+        ca.setAnnouncementCount(rs.getInt("announcement_count"));
+        return ca;
     }
 
     public CourseAllocation getAllocationById(int allocationId) {

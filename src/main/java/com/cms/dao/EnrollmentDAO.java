@@ -32,9 +32,9 @@ public class EnrollmentDAO {
         java.util.Map<Integer, StudentSummary> map = new java.util.HashMap<>();
         String current = "SELECT e.student_id, c.course_code FROM enrollments e " +
                 "JOIN course_allocations ca ON e.allocation_id = ca.allocation_id " +
-                "JOIN semesters s ON ca.semester_id = s.semester_id AND s.is_active = TRUE " +
                 "JOIN courses c ON ca.course_id = c.course_id " +
-                "WHERE e.status = 'ENROLLED' ORDER BY c.course_code";
+                "WHERE e.status = 'ENROLLED' AND ca.semester_id = " + ClassSemesterDAO.studentCurrentTermSql("e.student_id") +
+                " ORDER BY c.course_code";
         String counts = "SELECT u.user_id, " +
                 "(SELECT COUNT(*) FROM enrollments e WHERE e.student_id = u.user_id) AS records, " +
                 "(SELECT COUNT(*) FROM challans ch WHERE ch.student_id = u.user_id) AS challans, " +
@@ -146,14 +146,17 @@ public class EnrollmentDAO {
                 } else {
                     try (PreparedStatement stmt = conn.prepareStatement(
                             "INSERT INTO enrollments (student_id, allocation_id, status, semester_number) " +
-                                    "SELECT ?, ?, 'ENROLLED', (SELECT MAX(e.semester_number) FROM enrollments e " +
+                                    "SELECT ?, ?, 'ENROLLED', COALESCE(" + ClassSemesterDAO.studentSemesterNumberSql("?", "?") + ", " +
+                                    "(SELECT MAX(e.semester_number) FROM enrollments e " +
                                     "JOIN course_allocations ca ON e.allocation_id = ca.allocation_id " +
-                                    "WHERE e.student_id = ? AND ca.semester_id = ?)",
+                                    "WHERE e.student_id = ? AND ca.semester_id = ?))",
                             java.sql.Statement.RETURN_GENERATED_KEYS)) {
                         stmt.setInt(1, studentId);
                         stmt.setInt(2, allocationId);
-                        stmt.setInt(3, studentId);
+                        stmt.setInt(3, studentId); // the class's semester number for this term
                         stmt.setInt(4, semesterId);
+                        stmt.setInt(5, studentId); // fallback: the student's other courses this term
+                        stmt.setInt(6, semesterId);
                         stmt.executeUpdate();
                         try (ResultSet keys = stmt.getGeneratedKeys()) {
                             if (!keys.next())
@@ -163,10 +166,9 @@ public class EnrollmentDAO {
                     }
                     result.enrolled++;
                 }
-                // Every enrollment has a grade row (the teacher's grade sheet relies on it)
+                // Every enrollment has a grade row; marks stay NULL (not entered) until the teacher enters them
                 try (PreparedStatement stmt = conn.prepareStatement(
-                        "INSERT IGNORE INTO grades (enrollment_id, sessional_marks, mid_marks, final_marks, grade_letter, is_published) " +
-                                "VALUES (?, 0, 0, 0, NULL, FALSE)")) {
+                        "INSERT IGNORE INTO grades (enrollment_id) VALUES (?)")) {
                     stmt.setInt(1, enrollmentId);
                     stmt.executeUpdate();
                 }
@@ -284,14 +286,15 @@ public class EnrollmentDAO {
 
     private List<Enrollment> getEnrollmentsByStudent(int studentId, boolean activeSemesterOnly) {
         List<Enrollment> enrollments = new ArrayList<>();
-        String sql = "SELECT e.*, ca.course_id, c.course_code, c.course_name, c.credit_hours, p.full_name as teacher_name "
-                +
+        String sql = "SELECT e.*, ca.course_id, ca.teacher_id, c.course_code, c.course_name, c.credit_hours, " +
+                "COALESCE(p.full_name, t.username) as teacher_name " +
                 "FROM enrollments e " +
                 "JOIN course_allocations ca ON e.allocation_id = ca.allocation_id " +
                 "JOIN courses c ON ca.course_id = c.course_id " +
-                "JOIN profiles p ON ca.teacher_id = p.user_id " +
-                (activeSemesterOnly ? "JOIN semesters s ON ca.semester_id = s.semester_id AND s.is_active = TRUE " : "") +
-                "WHERE e.student_id = ? AND e.status = 'ENROLLED'";
+                "JOIN users t ON ca.teacher_id = t.user_id " +
+                "LEFT JOIN profiles p ON ca.teacher_id = p.user_id " +
+                "WHERE e.student_id = ? AND e.status = 'ENROLLED'" +
+                (activeSemesterOnly ? " AND ca.semester_id = " + ClassSemesterDAO.studentCurrentTermSql("e.student_id") : "");
 
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -307,6 +310,9 @@ public class EnrollmentDAO {
                     enrollment.setSemesterNumber(rs.getInt("semester_number"));
 
                     CourseAllocation ca = new CourseAllocation();
+                    ca.setAllocationId(enrollment.getAllocationId());
+                    ca.setCourseId(rs.getInt("course_id"));
+                    ca.setTeacherId(rs.getInt("teacher_id"));
                     Course c = new Course();
                     c.setCourseId(rs.getInt("course_id"));
                     c.setCourseCode(rs.getString("course_code"));
@@ -314,6 +320,7 @@ public class EnrollmentDAO {
                     c.setCreditHours(rs.getInt("credit_hours"));
 
                     User teacher = new User();
+                    teacher.setUserId(ca.getTeacherId());
                     teacher.setUsername(rs.getString("teacher_name"));
 
                     ca.setCourse(c);
@@ -432,117 +439,6 @@ public class EnrollmentDAO {
         } catch (SQLException e) {
             return false;
         }
-    }
-
-    public boolean addEnrollment(int studentId, int allocationId) {
-        // Find the courseId for this allocation
-        int courseId = -1;
-        String findCourseSql = "SELECT course_id FROM course_allocations WHERE allocation_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(findCourseSql)) {
-            stmt.setInt(1, allocationId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    courseId = rs.getInt("course_id");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        if (courseId != -1 && isEnrolledInCourse(studentId, courseId)) {
-            return false;
-        }
-
-        Connection conn = null;
-        try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
-
-            String sql = "INSERT INTO enrollments (student_id, allocation_id, status) VALUES (?, ?, 'ENROLLED')";
-            int enrollmentId = -1;
-            try (PreparedStatement stmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
-                stmt.setInt(1, studentId);
-                stmt.setInt(2, allocationId);
-                int affectedRows = stmt.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Creating enrollment failed, no rows affected.");
-                }
-
-                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        enrollmentId = generatedKeys.getInt(1);
-                    } else {
-                        throw new SQLException("Creating enrollment failed, no ID obtained.");
-                    }
-                }
-            }
-
-            // Create placeholder grade record
-            String gradeSql = "INSERT INTO grades (enrollment_id, sessional_marks, mid_marks, final_marks, grade_letter, is_published) VALUES (?, 0, 0, 0, NULL, FALSE)";
-            try (PreparedStatement stmt = conn.prepareStatement(gradeSql)) {
-                stmt.setInt(1, enrollmentId);
-                stmt.executeUpdate();
-            }
-
-            conn.commit();
-            return true;
-        } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    // New overload for convenience if courseId passed (AdminCourseRequestsServlet
-    // passes courseId, not allocationId potentially)
-    // Wait, AdminCourseRequestsServlet passes courseId. Enrollment table links to
-    // Allocation, not Course directly.
-    // We need to Find the allocation for this course in the current semester?
-    // AdminCourseRequestsServlet: enrollmentDAO.addEnrollment(studentId, courseId);
-    // This implies we need a method that takes courseId.
-    public boolean addEnrollmentByCourseId(int studentId, int courseId) {
-        // We need to find the active allocation for this course.
-        // Fallback to latest allocation if no active one found.
-        String findAllocSql = "SELECT ca.allocation_id " +
-                "FROM course_allocations ca " +
-                "LEFT JOIN semesters s ON ca.semester_id = s.semester_id " +
-                "WHERE ca.course_id = ? " +
-                "ORDER BY s.is_active DESC, s.start_date DESC LIMIT 1";
-
-        int allocationId = -1;
-        try (Connection conn = DBConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(findAllocSql)) {
-            stmt.setInt(1, courseId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    allocationId = rs.getInt("allocation_id");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        if (allocationId != -1) {
-            return addEnrollment(studentId, allocationId);
-        }
-        return false;
     }
 
     public boolean updateEnrollmentStatus(int studentId, int courseId, String status) {

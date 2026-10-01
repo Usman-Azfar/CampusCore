@@ -89,18 +89,32 @@
 
             <div class="sidebar-section">Teaching</div>
 
+            <a href="myCourses"
+               class="nav-item <%= uri.contains("/myCourses") || uri.contains("/my_courses") || uri.contains("/manageAnnouncements") || uri.contains("/course_announcements") ? "active" : "" %>">
+                Course List
+            </a>
+
             <a href="manageAttendance"
                class="nav-item <%= uri.contains("/manageAttendance") ? "active" : "" %>">
                 Mark Attendance
             </a>
 
-            <a href="dashboard" class="nav-item <%= uri.contains("/uploadGrades") || uri.contains("/manageAnnouncements") ? "active" : "" %>">
-                Course List
+            <a href="uploadGrades"
+               class="nav-item <%= uri.contains("/uploadGrades") || uri.contains("/upload_grades") ? "active" : "" %>">
+                Upload Grades
+            </a>
+
+            <a href="announcements" class="nav-item <%= uri.contains("/announcements") ? "active" : "" %>">
+                Announcements
             </a>
 
         <% } else if ("ADMIN".equals(userRole)) { %>
 
             <div class="sidebar-section">Admin Services</div>
+
+            <a href="announcements" class="nav-item <%= uri.contains("/announcements") ? "active" : "" %>">
+                Announcements
+            </a>
 
             <a href="manageTeachers"
                class="nav-item <%= uri.contains("/manageTeachers") ? "active" : "" %>">

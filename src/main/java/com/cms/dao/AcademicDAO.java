@@ -65,9 +65,10 @@ public class AcademicDAO {
 
     public List<AcademicClass> getAllClasses() {
         List<AcademicClass> classes = new ArrayList<>();
-        String sql = "SELECT cl.*, COUNT(u.user_id) AS student_count FROM classes cl " +
+        String sql = "SELECT cl.*, d.name AS department_name, COUNT(u.user_id) AS student_count FROM classes cl " +
+                "LEFT JOIN departments d ON d.department_id = cl.department_id " +
                 "LEFT JOIN users u ON u.class_id = cl.class_id AND u.role = 'STUDENT' " +
-                "GROUP BY cl.class_id ORDER BY cl.batch_year DESC, cl.degree, cl.program_name";
+                "GROUP BY cl.class_id, d.name ORDER BY cl.batch_year DESC, cl.degree, cl.program_name";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 ResultSet rs = stmt.executeQuery()) {
@@ -78,6 +79,9 @@ public class AcademicDAO {
                 c.setProgramName(rs.getString("program_name"));
                 c.setBatchYear(rs.getInt("batch_year"));
                 c.setStudentCount(rs.getInt("student_count"));
+                int deptId = rs.getInt("department_id");
+                c.setDepartmentId(rs.wasNull() ? null : deptId);
+                c.setDepartmentName(rs.getString("department_name"));
                 classes.add(c);
             }
         } catch (SQLException e) {
@@ -90,13 +94,14 @@ public class AcademicDAO {
         return exists("SELECT 1 FROM classes WHERE class_id = ?", classId);
     }
 
-    public Result addClass(String degree, String programName, int batchYear) {
-        String sql = "INSERT INTO classes (degree, program_name, batch_year) VALUES (?, ?, ?)";
+    public Result addClass(String degree, String programName, int batchYear, Integer departmentId) {
+        String sql = "INSERT INTO classes (degree, program_name, batch_year, department_id) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, degree);
             stmt.setString(2, programName);
             stmt.setInt(3, batchYear);
+            setNullableInt(stmt, 4, departmentId);
             stmt.executeUpdate();
             return Result.ok();
         } catch (SQLException e) {
@@ -107,14 +112,15 @@ public class AcademicDAO {
         }
     }
 
-    public Result updateClass(int classId, String degree, String programName, int batchYear) {
-        String sql = "UPDATE classes SET degree = ?, program_name = ?, batch_year = ? WHERE class_id = ?";
+    public Result updateClass(int classId, String degree, String programName, int batchYear, Integer departmentId) {
+        String sql = "UPDATE classes SET degree = ?, program_name = ?, batch_year = ?, department_id = ? WHERE class_id = ?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, degree);
             stmt.setString(2, programName);
             stmt.setInt(3, batchYear);
-            stmt.setInt(4, classId);
+            setNullableInt(stmt, 4, departmentId);
+            stmt.setInt(5, classId);
             return stmt.executeUpdate() > 0 ? Result.ok() : Result.fail("Class not found.");
         } catch (SQLException e) {
             if (isDuplicate(e))
@@ -127,7 +133,36 @@ public class AcademicDAO {
     public Result deleteClass(int classId) {
         if (exists("SELECT 1 FROM users WHERE class_id = ? LIMIT 1", classId))
             return Result.fail("This class still has students. Move them to another class first.");
-        return delete("DELETE FROM classes WHERE class_id = ?", classId, "Class");
+        // Its semester history goes with it (class_semesters cannot cascade, see the schema)
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM class_semesters WHERE class_id = ?")) {
+                    stmt.setInt(1, classId);
+                    stmt.executeUpdate();
+                }
+                int deleted;
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM classes WHERE class_id = ?")) {
+                    stmt.setInt(1, classId);
+                    deleted = stmt.executeUpdate();
+                }
+                if (deleted == 0) {
+                    conn.rollback();
+                    return Result.fail("Class not found.");
+                }
+                ClassSemesterDAO.refreshActiveTerms(conn);
+                conn.commit();
+                return Result.ok();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Result.fail("Could not delete the class. It may still be in use.");
+        }
     }
 
     // ---------------- Departments ----------------
@@ -192,6 +227,8 @@ public class AcademicDAO {
             return Result.fail("This department still has teachers. Move them to another department first.");
         if (exists("SELECT 1 FROM courses WHERE department_id = ? LIMIT 1", departmentId))
             return Result.fail("This department still owns courses. Change their department first.");
+        if (exists("SELECT 1 FROM classes WHERE department_id = ? LIMIT 1", departmentId))
+            return Result.fail("Classes still belong to this department. Change their department first.");
         return delete("DELETE FROM departments WHERE department_id = ?", departmentId, "Department");
     }
 
@@ -219,6 +256,13 @@ public class AcademicDAO {
             e.printStackTrace();
             return Result.fail("Could not delete the " + what.toLowerCase() + ". It may still be in use.");
         }
+    }
+
+    private static void setNullableInt(PreparedStatement stmt, int index, Integer value) throws SQLException {
+        if (value == null)
+            stmt.setNull(index, java.sql.Types.INTEGER);
+        else
+            stmt.setInt(index, value);
     }
 
     private static boolean isDuplicate(SQLException e) {

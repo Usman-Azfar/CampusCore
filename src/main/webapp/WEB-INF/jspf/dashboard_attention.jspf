@@ -1,0 +1,20 @@
+<%-- "Needs attention" card on the dashboard (included by dashboard.jsp).
+     Expects: List<String[]> attention ({text, link or null, link label, "error" for urgent}),
+     String attentionEmpty (shown when there is nothing), String attentionLink / attentionLinkLabel (optional header button). --%>
+<div class="card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h3 class="card-title">Needs attention<%= attention.isEmpty() ? "" : " (" + attention.size() + ")" %></h3>
+        <% if (attentionLink != null) { %><a href="<%= attentionLink %>" class="btn btn-primary btn-sm"><%= attentionLinkLabel %></a><% } %>
+    </div>
+    <% if (attention.isEmpty()) { %>
+        <p class="muted"><%= attentionEmpty %></p>
+    <% } else { %>
+        <ul class="todo">
+        <% for (String[] item : attention) {
+               boolean urgent = item.length > 3 && "error".equals(item[3]); %>
+            <li class="<%= urgent ? "urgent" : "" %>"><span><%= com.cms.util.HtmlUtil.esc(item[0]) %></span>
+                <% if (item[1] != null) { %><a class="btn <%= urgent ? "btn-danger" : "btn-secondary" %> btn-sm" href="<%= item[1] %>"><%= item[2] %></a><% } %></li>
+        <% } %>
+        </ul>
+    <% } %>
+</div>

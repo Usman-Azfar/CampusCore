@@ -80,6 +80,15 @@
                                 required min="1950" max="2100" placeholder="2026">
                         </div>
                     </div>
+                    <div class="form-group" style="margin:10px 0 0;">
+                        <label class="form-label" for="classDepartment">Department <span class="muted">(optional)</span></label>
+                        <select name="departmentId" id="classDepartment" class="form-control">
+                            <option value="">-- No department --</option>
+                            <% for (Department d : departments) { %>
+                                <option value="<%= d.getDepartmentId() %>"><%= HtmlUtil.esc(d.getName()) %></option>
+                            <% } %>
+                        </select>
+                    </div>
                     <div class="preview">Will appear as: <span class="tag" id="classPreview">BS Computer Science-2026</span></div>
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary" id="classSubmit">Add Class</button>
@@ -90,21 +99,23 @@
                 <div class="table-scroll" style="margin-top:18px;">
                 <table class="styled-table">
                     <thead>
-                        <tr><th>Class</th><th>Students</th><th>Actions</th></tr>
+                        <tr><th>Class</th><th>Department</th><th>Students</th><th>Actions</th></tr>
                     </thead>
                     <tbody>
                     <% if (classes.isEmpty()) { %>
-                        <tr><td colspan="3" style="text-align:center;">No classes yet.</td></tr>
+                        <tr><td colspan="4" style="text-align:center;">No classes yet.</td></tr>
                     <% } %>
                     <% for (AcademicClass c : classes) { %>
                         <tr>
                             <td><span class="tag"><%= HtmlUtil.esc(c.getDisplayName()) %></span></td>
+                            <td><% if (c.getDepartmentName() != null) { %><span class="tag tag-department"><%= HtmlUtil.esc(c.getDepartmentName()) %></span><% } else { %><span class="muted">-</span><% } %></td>
                             <td><%= c.getStudentCount() %></td>
                             <td>
                                 <div class="row-actions">
                                     <button type="button" class="btn btn-primary btn-sm js-edit-class"
                                         data-id="<%= c.getClassId() %>" data-degree="<%= HtmlUtil.esc(c.getDegree()) %>"
-                                        data-program="<%= HtmlUtil.esc(c.getProgramName()) %>" data-year="<%= c.getBatchYear() %>">Edit</button>
+                                        data-program="<%= HtmlUtil.esc(c.getProgramName()) %>" data-year="<%= c.getBatchYear() %>"
+                                        data-dept="<%= c.getDepartmentId() != null ? c.getDepartmentId() : "" %>">Edit</button>
                                     <form action="manageClasses" method="post"
                                         data-confirm="Delete class <%= HtmlUtil.esc(c.getDisplayName()) %>?" onsubmit="return confirm(this.dataset.confirm);">
                                         <input type="hidden" name="action" value="deleteClass">
@@ -123,7 +134,7 @@
             <!-- DEPARTMENTS -->
             <div class="card">
                 <h3 id="deptFormTitle">Add Department</h3>
-                <p class="muted">Teachers are assigned to a department.</p>
+                <p class="muted">Teachers are assigned to a department. Classes and courses can belong to one too.</p>
 
                 <form action="manageClasses" method="post" id="deptForm" style="margin-top:12px;">
                     <input type="hidden" name="action" value="saveDepartment">
@@ -201,6 +212,7 @@
             degree.value = b.dataset.degree;
             program.value = b.dataset.program;
             year.value = b.dataset.year;
+            document.getElementById("classDepartment").value = b.dataset.dept;
             updatePreview();
             setClassMode(true);
             degree.focus();

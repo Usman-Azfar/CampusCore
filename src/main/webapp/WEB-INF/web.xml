@@ -262,6 +262,15 @@
     </servlet-mapping>
 
     <servlet>
+        <servlet-name>TeacherCoursesServlet</servlet-name>
+        <servlet-class>com.cms.controllers.TeacherCoursesServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherCoursesServlet</servlet-name>
+        <url-pattern>/myCourses</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
         <servlet-name>ManageClassesServlet</servlet-name>
         <servlet-class>com.cms.controllers.ManageClassesServlet</servlet-class>
     </servlet>

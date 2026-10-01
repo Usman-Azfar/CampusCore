@@ -23,12 +23,21 @@ public class Semester {
     public Date getEndDate() { return endDate; }
     public void setEndDate(Date endDate) { this.endDate = endDate; }
 
+    // Active = at least one class is currently in this term (several terms can be active)
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
 
     // Usage (filled by SemesterDAO.getAllSemesters): a used semester cannot be removed
-    private int allocationCount; // course offerings (teacher assignments) in this semester
-    private int challanCount;    // fee challans issued for this semester
+    private int allocationCount;   // course offerings (teacher assignments) in this semester
+    private int challanCount;      // fee challans issued for this semester
+    private int classCount;        // classes placed in this term (current or past)
+    private int currentClassCount; // classes whose current term this is
+
+    public int getClassCount() { return classCount; }
+    public void setClassCount(int classCount) { this.classCount = classCount; }
+
+    public int getCurrentClassCount() { return currentClassCount; }
+    public void setCurrentClassCount(int currentClassCount) { this.currentClassCount = currentClassCount; }
 
     public int getAllocationCount() { return allocationCount; }
     public void setAllocationCount(int allocationCount) { this.allocationCount = allocationCount; }
