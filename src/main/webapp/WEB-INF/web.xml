@@ -12,6 +12,11 @@
         <listener-class>com.cms.listeners.PasswordMigrationListener</listener-class>
     </listener>
 
+    <!-- Closes the database connection pool when the application stops or is redeployed -->
+    <listener>
+        <listener-class>com.cms.listeners.DatabaseShutdownListener</listener-class>
+    </listener>
+
     <!-- Filters Configuration -->
     <!-- Authentication Filter -->
     <filter>

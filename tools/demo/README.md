@@ -4,7 +4,7 @@ Tools for the public demo and the README screenshots. All data they create is fi
 
 | File | Purpose |
 |---|---|
-| `demo_data.py` | Writes one SQL script that recreates the demo database: `DROP DATABASE`, `database_schema.sql`, then realistic demo data (5 departments, 9 classes, 55 users, 20 courses, attendance, grades, fees, requests, messages). All dates are relative to the day it runs, so the demo always looks current. Used nightly by `.github/workflows/reset-demo.yml`. |
+| `demo_data.py` | Writes one SQL script that rebuilds the demo database: `database_schema.sql` (drops and recreates every table; the database itself is kept, so the app's pooled connections stay valid), then realistic demo data (5 departments, 9 classes, 55 users, 20 courses, attendance, grades, fees, requests, messages). All dates are relative to the day it runs, so the demo always looks current. Used nightly by `.github/workflows/reset-demo.yml`. |
 | `demo-proof.png` | Placeholder payment-proof image referenced by the demo challans (copied into the upload folder when the container starts). |
 | `shoot.mjs` | Full-page screenshots with headless Chrome over the DevTools protocol (Node 22+, no packages). |
 | `*-pages.json` | The pages captured for each portal's README screenshots. |
