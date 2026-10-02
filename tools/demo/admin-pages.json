@@ -1,0 +1,104 @@
+{
+  "base": "http://localhost:8080/campuscore",
+  "outDir": "docs/screenshots/admin",
+  "profileDir": ".chrome-profile-admin",
+  "login": {
+    "username": "ADMIN",
+    "password": "ADMIN123"
+  },
+  "pages": [
+    {
+      "file": "02-dashboard.png",
+      "path": "/dashboard",
+      "wait": 1500
+    },
+    {
+      "file": "03-manage-teachers.png",
+      "path": "/manageTeachers"
+    },
+    {
+      "file": "04-edit-teacher.png",
+      "path": "/manageTeachers?editId=5"
+    },
+    {
+      "file": "05-manage-students.png",
+      "path": "/manageStudents"
+    },
+    {
+      "file": "06-edit-student.png",
+      "path": "/manageStudents?editId=22"
+    },
+    {
+      "file": "07-classes-departments.png",
+      "path": "/manageClasses"
+    },
+    {
+      "file": "08-manage-courses.png",
+      "path": "/manageCourses"
+    },
+    {
+      "file": "09-edit-course.png",
+      "path": "/manageCourses?editId=6"
+    },
+    {
+      "file": "10-faculty-assignment.png",
+      "path": "/manageAllocations?courseId=3"
+    },
+    {
+      "file": "11-enrollment.png",
+      "path": "/manageEnrollment?courseId=3&allocationId=16"
+    },
+    {
+      "file": "12-manage-semesters.png",
+      "path": "/manageSemesters"
+    },
+    {
+      "file": "13-edit-semester.png",
+      "path": "/manageSemesters?editId=5"
+    },
+    {
+      "file": "14-add-drop-requests.png",
+      "path": "/manageCourseRequests"
+    },
+    {
+      "file": "15-fee-challans.png",
+      "path": "/uploadChallan"
+    },
+    {
+      "file": "16-challan-voucher.png",
+      "path": "/challanView?id=4"
+    },
+    {
+      "file": "17-announcements.png",
+      "path": "/announcements"
+    },
+    {
+      "file": "18-edit-announcement.png",
+      "path": "/announcements?edit=4"
+    },
+    {
+      "file": "19-messages.png",
+      "path": "/messages"
+    },
+    {
+      "file": "20-messages-sent.png",
+      "path": "/messages?view=sent"
+    },
+    {
+      "file": "21-help-desk.png",
+      "path": "/helpdesk"
+    },
+    {
+      "file": "22-help-desk-reply.png",
+      "path": "/helpdesk?reply=3"
+    },
+    {
+      "file": "23-update-profile.png",
+      "path": "/updateProfile"
+    },
+    {
+      "file": "24-change-password.png",
+      "path": "/changePassword"
+    }
+  ]
+}

@@ -32,3 +32,8 @@ target/
 
 # Local development notes (not published)
 session_context.txt
+
+# Generated demo database scripts
+tools/demo/*.sql
+demo.sql
+.chrome-profile-*/

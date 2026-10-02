@@ -32,6 +32,7 @@ It is built with **Java 17, Jakarta Servlets/JSP and MySQL** in a classic MVC st
 - [Architecture](#architecture)
 - [Security](#security)
 - [Getting started](#getting-started)
+- [Deployment](#deployment)
 - [Testing](#testing)
 - [Project structure](#project-structure)
 - [Roadmap](#roadmap)
@@ -420,6 +421,7 @@ Set these environment variables (or `-D` JVM options with the same names) before
 | `CMS_DB_USER` | `root` | Database user |
 | `CMS_DB_PASSWORD` | `root` | Database password |
 | `CMS_UPLOAD_DIR` (or `-Dcms.upload.dir`) | `<tomcat>/cms-uploads` | Where challan files and payment proofs are stored |
+| `CMS_DEMO_MODE` | `false` | Public demo mode: banner on every page, demo logins on the login page, the demo accounts cannot be edited, deactivated, deleted or given a new password, uploads limited to 2 MB |
 
 If MySQL runs on another machine, set its time zone in the URL, e.g. `connectionTimeZone=Asia/Karachi`.
 
@@ -442,6 +444,26 @@ Created by `database_schema.sql` (stored as password hashes):
 | Student | `BCSF22M512` | `Usman123` |
 
 > **Note:** change these passwords on any system other than a local development machine.
+
+## Deployment
+
+The repository includes everything for a hosted demo:
+
+| File | Purpose |
+|---|---|
+| [`Dockerfile`](Dockerfile) | Two-stage build: Maven builds the WAR and runs the tests, then Tomcat 10.1 (JRE 17) serves it at `/`. Listens on `$PORT` (default 8080), memory-limited for small instances. |
+| [`docker-entrypoint.sh`](docker-entrypoint.sh) | Applies the port and prepares the upload folder at start-up. |
+| [`.github/workflows/reset-demo.yml`](.github/workflows/reset-demo.yml) | Rebuilds the demo database every night (and on demand) from [`tools/demo/demo_data.py`](tools/demo), so visitors' changes are undone and dates stay current. Database credentials come from GitHub Actions secrets. |
+
+```bash
+docker build -t campuscore .
+docker run -p 8080:8080 \
+  -e CMS_DB_URL="jdbc:mysql://<host>:<port>/cms_ead?sslMode=REQUIRED&connectionTimeZone=UTC" \
+  -e CMS_DB_USER=<user> -e CMS_DB_PASSWORD=<password> -e CMS_DEMO_MODE=true \
+  campuscore
+```
+
+The live demo runs this image on [Render](https://render.com) with a managed MySQL 8 database on [Aiven](https://aiven.io).
 
 ## Testing
 

@@ -1,0 +1,86 @@
+{
+  "base": "http://localhost:8080/campuscore",
+  "outDir": "docs/screenshots/teacher",
+  "profileDir": ".chrome-profile-teacher",
+  "login": {
+    "username": "TEACHER1",
+    "password": "Teacher123"
+  },
+  "pages": [
+    {
+      "file": "01-dashboard.png",
+      "path": "/dashboard",
+      "wait": 1500
+    },
+    {
+      "file": "02-course-list.png",
+      "path": "/myCourses"
+    },
+    {
+      "file": "03-mark-attendance-courses.png",
+      "path": "/manageAttendance"
+    },
+    {
+      "file": "04-attendance-new-lecture.png",
+      "path": "/manageAttendance?allocationId=16&date=2026-10-01",
+      "js": "(() => { const g=[...document.querySelectorAll('.status-group')]; [[1,'Absent'],[4,'Leave'],[7,'Absent']].forEach(([i,v])=>{ const r=g[i]&&g[i].querySelector('input[value=\"'+v+'\"]'); if(r){ r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); } }); const t=document.getElementById('topic'); if(t) t.value='Inheritance and polymorphism'; window.scrollTo(0,0); })()"
+    },
+    {
+      "file": "05-attendance-edit-lecture.png",
+      "path": "/manageAttendance?allocationId=16&lectureId=59"
+    },
+    {
+      "file": "06-attendance-past-course.png",
+      "path": "/manageAttendance?allocationId=1&lectureId=1"
+    },
+    {
+      "file": "07-upload-grades-courses.png",
+      "path": "/uploadGrades"
+    },
+    {
+      "file": "08-grade-sheet.png",
+      "path": "/uploadGrades?allocationId=16",
+      "js": "(() => { const rows=[...document.querySelectorAll('tr[data-row]')]; const vals=[[22,30,35],[18,26,31],[20.5,24,null],[15,36,18],[24,33,38]]; rows.slice(0,5).forEach((tr,i)=>{ const ins=tr.querySelectorAll('.mark-input'); vals[i].forEach((v,j)=>{ if(v!==null){ ins[j].value=v; ins[j].dispatchEvent(new Event('input',{bubbles:true})); } }); }); [0,1,4].forEach(i=>{ const c=rows[i]&&rows[i].querySelector('input[type=checkbox]'); if(c){ c.checked=true; c.dispatchEvent(new Event('change',{bubbles:true})); } }); window.scrollTo(0,0); })()"
+    },
+    {
+      "file": "09-grade-sheet-locked.png",
+      "path": "/uploadGrades?allocationId=1"
+    },
+    {
+      "file": "10-course-announcements.png",
+      "path": "/manageAnnouncements?allocationId=16"
+    },
+    {
+      "file": "11-edit-course-announcement.png",
+      "path": "/manageAnnouncements?allocationId=16&edit=7"
+    },
+    {
+      "file": "12-announcements.png",
+      "path": "/announcements"
+    },
+    {
+      "file": "13-message-course-students.png",
+      "path": "/messages?allocationId=16"
+    },
+    {
+      "file": "14-messages-sent.png",
+      "path": "/messages?view=sent"
+    },
+    {
+      "file": "15-help-desk.png",
+      "path": "/helpdesk"
+    },
+    {
+      "file": "16-faq.png",
+      "path": "/faq.jsp"
+    },
+    {
+      "file": "17-update-profile.png",
+      "path": "/updateProfile"
+    },
+    {
+      "file": "18-change-password.png",
+      "path": "/changePassword"
+    }
+  ]
+}

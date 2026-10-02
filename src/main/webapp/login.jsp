@@ -72,6 +72,27 @@
                     <p style="margin-top: 20px; font-size: 0.85em; color: #666;">
                         Use your CampusCore username and password to sign in.
                     </p>
+
+                    <% if (com.cms.util.DemoMode.isOn()) { %>
+                    <div class="demo-logins" style="margin-top: 18px; text-align: left; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; font-size: 0.85em; color: #78350f;">
+                        <strong>Live demo</strong> &mdash; fictional data, reset every night. Pick an account to fill in the form:
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                            <% for (String[] a : com.cms.util.DemoMode.ACCOUNTS) { %>
+                                <button type="button" class="btn btn-secondary btn-sm js-demo-login"
+                                        data-user="<%= a[0] %>" data-pass="<%= a[1] %>"><%= a[2] %>: <%= a[0] %></button>
+                            <% } %>
+                        </div>
+                    </div>
+                    <script>
+                        document.querySelectorAll(".js-demo-login").forEach(function (b) {
+                            b.addEventListener("click", function () {
+                                document.getElementById("username").value = b.dataset.user;
+                                document.getElementById("password").value = b.dataset.pass;
+                                document.getElementById("password").focus();
+                            });
+                        });
+                    </script>
+                    <% } %>
         </div>
     </div>
 </body>

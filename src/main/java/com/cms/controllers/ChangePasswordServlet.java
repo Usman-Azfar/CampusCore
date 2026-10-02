@@ -42,7 +42,9 @@ public class ChangePasswordServlet extends HttpServlet {
         String confirmPassword = orEmpty(request.getParameter("confirmPassword"));
 
         String error = null;
-        if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+        if (com.cms.util.DemoMode.isProtected(user.getUsername())) {
+            error = com.cms.util.DemoMode.BLOCKED_MESSAGE;
+        } else if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
             error = "Please fill in all three fields.";
         } else if (!newPassword.equals(confirmPassword)) {
             error = "The new passwords do not match.";

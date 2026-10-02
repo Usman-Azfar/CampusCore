@@ -1,0 +1,12 @@
+# Only pom.xml, src/, the entrypoint and the demo proof image are needed to build the image
+.git
+target
+docs
+database_migrations
+*.md
+session_context.txt
+tools/demo/*.sql
+tools/demo/*.json
+tools/demo/*.mjs
+tools/demo/*.bat
+tools/demo/*.py

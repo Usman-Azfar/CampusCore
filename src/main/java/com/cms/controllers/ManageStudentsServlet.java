@@ -65,6 +65,8 @@ public class ManageStudentsServlet extends HttpServlet {
             User s = userId != null ? student(userId) : null;
             if (s == null) {
                 fail(request, "Student not found.");
+            } else if (com.cms.util.DemoMode.isProtected(s.getUsername())) {
+                fail(request, com.cms.util.DemoMode.BLOCKED_MESSAGE);
             } else if ("delete".equals(action)) {
                 EnrollmentDAO.StudentSummary sum = enrollmentDAO.getStudentSummaries().get(s.getUserId());
                 if (sum != null && sum.hasAcademicRecords()) {
@@ -104,8 +106,8 @@ public class ManageStudentsServlet extends HttpServlet {
             profile = new Profile();
         } else {
             user = student(userId);
-            if (user == null) {
-                fail(request, "Student not found.");
+            if (user == null || com.cms.util.DemoMode.isProtected(user.getUsername())) {
+                fail(request, user == null ? "Student not found." : com.cms.util.DemoMode.BLOCKED_MESSAGE);
                 response.sendRedirect(redirect);
                 return;
             }

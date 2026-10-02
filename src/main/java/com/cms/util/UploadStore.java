@@ -54,8 +54,10 @@ public final class UploadStore {
         if (part == null || part.getSize() == 0 || part.getSubmittedFileName() == null
                 || part.getSubmittedFileName().isEmpty())
             return null;
-        if (part.getSize() > MAX_BYTES)
-            throw new RejectedFileException("The attachment is larger than 10 MB.");
+        long max = DemoMode.maxUploadBytes();
+        if (part.getSize() > max)
+            throw new RejectedFileException("The attachment is larger than " + (max / (1024 * 1024)) + " MB"
+                    + (DemoMode.isOn() ? " (the limit in this demo)." : "."));
 
         byte[] head = new byte[8];
         int n;

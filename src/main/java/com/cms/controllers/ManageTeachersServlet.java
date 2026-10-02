@@ -69,6 +69,8 @@ public class ManageTeachersServlet extends HttpServlet {
             User t = userId != null ? teacher(userId) : null;
             if (t == null) {
                 fail(request, "Teacher not found.");
+            } else if (com.cms.util.DemoMode.isProtected(t.getUsername())) {
+                fail(request, com.cms.util.DemoMode.BLOCKED_MESSAGE);
             } else if ("delete".equals(action)) {
                 List<CourseAllocation> offerings = teachingByTeacher().getOrDefault(t.getUserId(), new ArrayList<>());
                 if (!offerings.isEmpty()) {
@@ -110,8 +112,8 @@ public class ManageTeachersServlet extends HttpServlet {
             profile = new Profile();
         } else {
             user = teacher(userId);
-            if (user == null) {
-                fail(request, "Teacher not found.");
+            if (user == null || com.cms.util.DemoMode.isProtected(user.getUsername())) {
+                fail(request, user == null ? "Teacher not found." : com.cms.util.DemoMode.BLOCKED_MESSAGE);
                 response.sendRedirect(redirect);
                 return;
             }

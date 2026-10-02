@@ -1,0 +1,88 @@
+{
+  "base": "http://localhost:8080/campuscore",
+  "outDir": "docs/screenshots/student",
+  "profileDir": ".chrome-profile-student",
+  "login": {
+    "username": "BCSF22M512",
+    "password": "Usman123"
+  },
+  "pages": [
+    {
+      "file": "01-dashboard.png",
+      "path": "/dashboard",
+      "wait": 1500
+    },
+    {
+      "file": "02-attendance.png",
+      "path": "/attendance"
+    },
+    {
+      "file": "03-attendance-filtered.png",
+      "path": "/attendance?term=5"
+    },
+    {
+      "file": "04-attendance-course.png",
+      "path": "/attendance?enrollmentId=34"
+    },
+    {
+      "file": "05-gradebook.png",
+      "path": "/gradebook"
+    },
+    {
+      "file": "06-gradebook-filtered.png",
+      "path": "/gradebook?result=graded"
+    },
+    {
+      "file": "07-transcript.png",
+      "path": "/transcript"
+    },
+    {
+      "file": "08-transcript-partial.png",
+      "path": "/transcript?term=4"
+    },
+    {
+      "file": "09-add-drop.png",
+      "path": "/courseRequests"
+    },
+    {
+      "file": "10-fee-challans.png",
+      "path": "/challans"
+    },
+    {
+      "file": "11-challan-voucher.png",
+      "path": "/challanView?id=2"
+    },
+    {
+      "file": "12-announcements.png",
+      "path": "/announcements"
+    },
+    {
+      "file": "13-announcements-course.png",
+      "path": "/announcements?allocationId=10"
+    },
+    {
+      "file": "14-messages.png",
+      "path": "/messages"
+    },
+    {
+      "file": "15-message-teacher.png",
+      "path": "/messages?to=4"
+    },
+    {
+      "file": "16-help-desk.png",
+      "path": "/helpdesk"
+    },
+    {
+      "file": "17-faq.png",
+      "path": "/faq.jsp"
+    },
+    {
+      "file": "18-update-profile.png",
+      "path": "/updateProfile"
+    },
+    {
+      "file": "19-change-password.png",
+      "path": "/changePassword"
+    }
+  ]
+}

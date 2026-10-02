@@ -1,0 +1,47 @@
+# Rebuilds the live demo database every night with fresh fictional data (dates relative to today),
+# so whatever visitors change is undone. Can also be started by hand: Actions -> Reset demo database -> Run workflow.
+#
+# Needs these repository secrets (Settings -> Secrets and variables -> Actions):
+#   DEMO_DB_HOST, DEMO_DB_PORT, DEMO_DB_USER, DEMO_DB_PASSWORD
+# Optional repository variable DEMO_DB_NAME (default cms_ead): must match the database in the app's CMS_DB_URL.
+
+name: Reset demo database
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # every day at 21:30 UTC (02:30 in Pakistan)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reset-demo
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the MySQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq mysql-client
+
+      - name: Generate the demo database script
+        run: python tools/demo/demo_data.py --database "${{ vars.DEMO_DB_NAME || 'cms_ead' }}" --out demo.sql
+
+      - name: Load it into the demo database
+        env:
+          MYSQL_PWD: ${{ secrets.DEMO_DB_PASSWORD }}
+        run: |
+          mysql --host="${{ secrets.DEMO_DB_HOST }}" --port="${{ secrets.DEMO_DB_PORT }}" \
+                --user="${{ secrets.DEMO_DB_USER }}" --ssl-mode=REQUIRED --connect-timeout=60 < demo.sql
+          mysql --host="${{ secrets.DEMO_DB_HOST }}" --port="${{ secrets.DEMO_DB_PORT }}" \
+                --user="${{ secrets.DEMO_DB_USER }}" --ssl-mode=REQUIRED \
+                -e "SELECT COUNT(*) AS users FROM \`${{ vars.DEMO_DB_NAME || 'cms_ead' }}\`.users"
