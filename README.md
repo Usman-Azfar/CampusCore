@@ -21,10 +21,31 @@ CampusCore is a full-stack web application that runs the academic and administra
 
 It is built with **Java 17, Jakarta Servlets/JSP and MySQL** in a classic MVC structure, with no web framework: request handling, data access, access control, validation and security are written directly on the Servlet API and JDBC.
 
+<p align="center">
+  <a href="https://campuscore-web-9ehv.onrender.com"><img alt="Open the live demo" src="https://img.shields.io/badge/Live%20demo-campuscore--web--9ehv.onrender.com-2563EB?style=for-the-badge"></a>
+</p>
+
+---
+
+## Live demo
+
+**[campuscore-web-9ehv.onrender.com](https://campuscore-web-9ehv.onrender.com)**: log in with any of these accounts (the login page also has one-click buttons):
+
+| Role | Username | Password |
+|---|---|---|
+| Administrator | `ADMIN` | `ADMIN123` |
+| Teacher | `TEACHER1` | `Teacher123` |
+| Student | `BCSF22M512` | `Usman123` |
+
+- All data is **fictional** and is **reset every night**, so feel free to try everything: mark attendance, enter and publish grades, issue challans, approve requests, post announcements.
+- The demo accounts themselves cannot be edited, deactivated or given a new password, so they always work for the next visitor.
+- Free hosting: if the demo has been idle, **the first page can take up to a minute** to wake up. Times are shown in UTC.
+
 ---
 
 ## Contents
 
+- [Live demo](#live-demo)
 - [Highlights](#highlights)
 - [Screenshots](#screenshots)
 - [Features](#features)
@@ -463,7 +484,7 @@ docker run -p 8080:8080 \
   campuscore
 ```
 
-The live demo runs this image on [Render](https://render.com) with a managed MySQL 8 database on [Aiven](https://aiven.io).
+The [live demo](https://campuscore-web-9ehv.onrender.com) runs this image on [Render](https://render.com) with a managed MySQL 8 database on [Aiven](https://aiven.io).
 
 ## Testing
 
